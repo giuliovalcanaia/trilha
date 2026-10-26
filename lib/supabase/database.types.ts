@@ -156,6 +156,7 @@ export type Database = {
           aplicacao_id: number
           concluido_em: string | null
           estudante_id: number
+          expulso_em: string | null
           id: number
           iniciado_em: string
           nome: string
@@ -164,6 +165,7 @@ export type Database = {
           aplicacao_id: number
           concluido_em?: string | null
           estudante_id: number
+          expulso_em?: string | null
           id?: number
           iniciado_em?: string
           nome: string
@@ -172,6 +174,7 @@ export type Database = {
           aplicacao_id?: number
           concluido_em?: string | null
           estudante_id?: number
+          expulso_em?: string | null
           id?: number
           iniciado_em?: string
           nome?: string
@@ -425,6 +428,10 @@ export type Database = {
       }
       empty_trash: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      expel_student: {
+        Args: { p_participacao_id: number }
         Returns: undefined
       }
       join_activity: {

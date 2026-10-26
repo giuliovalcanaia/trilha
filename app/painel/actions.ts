@@ -959,3 +959,37 @@ export async function updateStudentProgress(
   revalidatePainel(`/painel/atividades/${atividadeId}`)
   return ok("Progresso atualizado.")
 }
+
+// ---------------------------------------------------------
+// Alunos (professor)
+// ---------------------------------------------------------
+
+export async function expelStudent(
+  _prev: ActionResult,
+  formData: FormData
+): Promise<ActionResult> {
+  const teacher = await getTeacher()
+  if (!teacher) return fail("Sessão expirada. Entre novamente.")
+
+  const atividadeId = idField(formData, "atividade_id")
+  const participacaoId = idField(formData, "participacao_id")
+
+  if (!atividadeId || !participacaoId) {
+    return fail("Aluno inválido.")
+  }
+
+  const { error } = await teacher.supabase.rpc("expel_student", {
+    p_participacao_id: participacaoId,
+  })
+
+  if (error) {
+    return fail(
+      error.message === "participation_not_found"
+        ? "Este aluno não está mais nesta atividade."
+        : "Não foi possível expulsar o aluno."
+    )
+  }
+
+  revalidatePainel(`/painel/atividades/${atividadeId}`)
+  return ok("Aluno expulso da atividade.")
+}

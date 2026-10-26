@@ -9,6 +9,7 @@ import { ActionForm } from "@/components/painel/action-form"
 import { AtividadeCabecalho } from "@/components/painel/atividade-cabecalho"
 import { AtividadeTabsList } from "@/components/painel/atividade-tabs-list"
 import { AtividadeTempoReal } from "@/components/painel/atividade-tempo-real"
+import { ExpelStudentButton } from "@/components/painel/expel-student-button"
 import { LinkAtividadeCopiavel } from "@/components/painel/link-atividade-copiavel"
 import { LinksDraftProvider } from "@/components/painel/links-draft"
 import { LinksEditorTextarea } from "@/components/painel/links-editor-textarea"
@@ -125,6 +126,7 @@ export default async function Page({
     .from("participacoes")
     .select("id, aplicacao_id, nome, iniciado_em, concluido_em")
     .in("aplicacao_id", aplicacaoIds.length > 0 ? aplicacaoIds : [-1])
+    .is("expulso_em", null)
     .order("nome")
 
   const participacaoIds = (participacoes ?? []).map(
@@ -286,41 +288,48 @@ export default async function Page({
                                 key={aluno.id}
                                 className="rounded-lg border p-3"
                               >
-                                <details>
-                                  <summary className="cursor-pointer text-sm">
-                                    <span className="font-medium">
-                                      {aluno.nome}
-                                    </span>
-                                    <span className="text-muted-foreground">
-                                      {" "}
-                                      · {concluidos}/{(links ?? []).length}{" "}
-                                      concluídos · início{" "}
-                                      {formatDateTime(aluno.iniciado_em)} · fim{" "}
-                                      {formatDateTime(aluno.concluido_em)}
-                                    </span>
-                                  </summary>
-                                  <div className="mt-3 space-y-2">
-                                    {(links ?? []).map((link, index) => {
-                                      const row =
-                                        progressoPorParticipacaoLink.get(
-                                          `${aluno.id}:${link.id}`
-                                        )
+                                <div className="flex items-start justify-between gap-3">
+                                  <details className="min-w-0 flex-1">
+                                    <summary className="cursor-pointer text-sm">
+                                      <span className="font-medium">
+                                        {aluno.nome}
+                                      </span>
+                                      <span className="text-muted-foreground">
+                                        {" "}
+                                        · {concluidos}/{(links ?? []).length}{" "}
+                                        concluídos · início{" "}
+                                        {formatDateTime(aluno.iniciado_em)} ·
+                                        fim {formatDateTime(aluno.concluido_em)}
+                                      </span>
+                                    </summary>
+                                    <div className="mt-3 space-y-2">
+                                      {(links ?? []).map((link, index) => {
+                                        const row =
+                                          progressoPorParticipacaoLink.get(
+                                            `${aluno.id}:${link.id}`
+                                          )
 
-                                      return (
-                                        <ProgressoAlunoForm
-                                          key={link.id}
-                                          atividadeId={atividade.id}
-                                          participacaoId={aluno.id}
-                                          linkId={link.id}
-                                          indice={index + 1}
-                                          titulo={link.titulo}
-                                          status={row?.status ?? "bloqueada"}
-                                          pontuacao={row?.pontuacao ?? null}
-                                        />
-                                      )
-                                    })}
-                                  </div>
-                                </details>
+                                        return (
+                                          <ProgressoAlunoForm
+                                            key={link.id}
+                                            atividadeId={atividade.id}
+                                            participacaoId={aluno.id}
+                                            linkId={link.id}
+                                            indice={index + 1}
+                                            titulo={link.titulo}
+                                            status={row?.status ?? "bloqueada"}
+                                            pontuacao={row?.pontuacao ?? null}
+                                          />
+                                        )
+                                      })}
+                                    </div>
+                                  </details>
+                                  <ExpelStudentButton
+                                    atividadeId={atividade.id}
+                                    participacaoId={aluno.id}
+                                    nome={aluno.nome}
+                                  />
+                                </div>
                               </div>
                             )
                           })}

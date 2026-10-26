@@ -7,12 +7,14 @@ import { createClient } from "@/lib/supabase/client"
 
 /**
  * Mantém a tela do aluno sincronizada com o painel do professor:
- * status/nota dos links (progresso_estudante) e encerramento/reabertura da
- * entrada (aplicacoes) chegam pelo Realtime e disparam um refresh do Server
- * Component.
+ * status/nota dos links (progresso_estudante), encerramento/reabertura da
+ * entrada (aplicacoes) e expulsão da participação (participacoes.expulso_em)
+ * chegam pelo Realtime e disparam um refresh do Server Component.
  *
- * Assina apenas INSERT/UPDATE: DELETE exigiria `replica identity full` e as
- * policies de RLS não são aplicadas a eventos de DELETE.
+ * Ao voltar para a aba, um refresh garante o mesmo efeito caso o canal tenha
+ * caído enquanto o aluno estava no link. Assina apenas INSERT/UPDATE: DELETE
+ * exigiria `replica identity full` e as policies de RLS não são aplicadas a
+ * eventos de DELETE.
  */
 export function StudentActivityRealtime({
   participacaoId,
@@ -31,6 +33,12 @@ export function StudentActivityRealtime({
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
       timeoutRef.current = setTimeout(() => router.refresh(), 250)
     }
+
+    function atualizarSeVisivel() {
+      if (document.visibilityState === "visible") agendarAtualizacao()
+    }
+
+    document.addEventListener("visibilitychange", atualizarSeVisivel)
 
     const canal = supabase
       .channel(`aluno-participacao-${participacaoId}`)
@@ -64,10 +72,21 @@ export function StudentActivityRealtime({
         },
         agendarAtualizacao
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "participacoes",
+          filter: `id=eq.${participacaoId}`,
+        },
+        agendarAtualizacao
+      )
       .subscribe()
 
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      document.removeEventListener("visibilitychange", atualizarSeVisivel)
       void supabase.removeChannel(canal)
     }
   }, [participacaoId, aplicacaoId, router])

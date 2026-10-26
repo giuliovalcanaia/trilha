@@ -58,13 +58,17 @@ export default async function Page({
 
   const { data: participacao } = await supabase
     .from("participacoes")
-    .select("id, nome, iniciado_em, concluido_em")
+    .select("id, nome, iniciado_em, concluido_em, expulso_em")
     .eq("aplicacao_id", aplicacao.id)
     .eq("estudante_id", estudante.id)
     .maybeSingle()
 
   if (!participacao) {
     redirect(`/aluno?codigo=${encodeURIComponent(codigoEntrada)}`)
+  }
+
+  if (participacao.expulso_em) {
+    redirect(`/aluno?codigo=${encodeURIComponent(codigoEntrada)}&expulso=1`)
   }
 
   const tempoReal = (
