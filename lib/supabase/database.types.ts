@@ -407,7 +407,12 @@ export type Database = {
     }
     Functions: {
       complete_link: {
-        Args: { p_aplicacao_id: number; p_link_id: number; p_senha: string }
+        Args: {
+          p_aplicacao_id: number
+          p_link_id: number
+          p_pontuacao: number | null
+          p_senha: string
+        }
         Returns: Json
       }
       duplicate_atividade: {

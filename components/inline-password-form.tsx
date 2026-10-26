@@ -6,12 +6,19 @@ import { CheckIcon, LoaderCircleIcon } from "lucide-react"
 
 import { completeLink } from "@/app/atividade/actions"
 import { Button } from "@/components/ui/button"
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/components/ui/toast"
 import { cn } from "@/lib/utils"
 
 const errorMessages: Record<string, string> = {
   invalid_password: "Senha incorreta. Confira com o professor.",
+  invalid_score: "A nota deve ser um número inteiro maior ou igual a 0.",
   link_locked: "Este link não está disponível para conclusão.",
   password_not_set: "O professor ainda não definiu a senha desta atividade.",
   application_closed: "Esta turma foi encerrada pelo professor.",
@@ -24,15 +31,17 @@ const errorMessages: Record<string, string> = {
 const LOCKOUT_SECONDS = 3
 
 /**
- * Senha de liberação digitada direto no cartão do link em andamento.
+ * Nota (opcional) e senha de liberação digitadas direto no cartão do link em
+ * andamento. A nota vai para `progresso_estudante.pontuacao` junto da
+ * conclusão; em branco, a nota atual é preservada (inclusive a do professor).
  *
- * Ao voltar para esta aba, o campo recebe o foco automaticamente: o aluno
- * abre o link em outra aba, faz a tarefa e, na volta, já pode digitar a senha
- * sem clicar em nada (o mesmo comportamento do app antigo).
+ * Ao voltar para esta aba, o campo de senha recebe o foco automaticamente: o
+ * aluno abre o link em outra aba, faz a tarefa e, na volta, já pode digitar a
+ * senha sem clicar em nada (o mesmo comportamento do app antigo).
  *
- * O input não usa `type="password"` de propósito: o Chrome interpretaria o
- * campo como credencial do site e ofereceria salvar a senha. O texto é
- * mascarado via `-webkit-text-security`, como em `SenhaField`.
+ * O input de senha não usa `type="password"` de propósito: o Chrome
+ * interpretaria o campo como credencial do site e ofereceria salvar a senha.
+ * O texto é mascarado via `-webkit-text-security`, como em `SenhaField`.
  */
 export function InlinePasswordForm({
   aplicacaoId,
@@ -45,7 +54,10 @@ export function InlinePasswordForm({
 }) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
+  const notaRef = useRef<HTMLInputElement>(null)
   const refreshTimeout = useRef<number | null>(null)
+  const [nota, setNota] = useState("")
+  const [erroNota, setErroNota] = useState<string | null>(null)
   const [senha, setSenha] = useState("")
   const [erro, setErro] = useState<string | null>(null)
   const [bloqueio, setBloqueio] = useState(0)
@@ -54,9 +66,10 @@ export function InlinePasswordForm({
 
   const bloqueado = enviando || concluido || bloqueio > 0
 
-  // Foca o campo quando a aba volta a ficar visível. Como normalmente só
-  // existe um link em andamento, o primeiro campo habilitado da página é o
-  // dono do foco; isso evita disputa caso o professor deixe mais de um.
+  // Foca o campo de senha quando a aba volta a ficar visível. Como
+  // normalmente só existe um link em andamento, o primeiro campo habilitado da
+  // página é o dono do foco; isso evita disputa caso o professor deixe mais de
+  // um.
   useEffect(() => {
     function handleVisibilityChange() {
       if (document.visibilityState !== "visible") return
@@ -107,6 +120,20 @@ export function InlinePasswordForm({
 
     if (bloqueado) return
 
+    let pontuacao: number | null = null
+
+    if (nota.trim()) {
+      pontuacao = Number(nota)
+
+      if (!Number.isInteger(pontuacao) || pontuacao < 0) {
+        setErroNota("Informe um número inteiro maior ou igual a 0.")
+        notaRef.current?.focus()
+        return
+      }
+    }
+
+    setErroNota(null)
+
     const value = senha.trim()
 
     if (!value) {
@@ -118,7 +145,7 @@ export function InlinePasswordForm({
     setErro(null)
 
     startTransition(async () => {
-      const result = await completeLink(aplicacaoId, linkId, value)
+      const result = await completeLink(aplicacaoId, linkId, value, pontuacao)
 
       if (result.error) {
         setErro(errorMessages[result.error] ?? "Não foi possível concluir.")
@@ -144,62 +171,83 @@ export function InlinePasswordForm({
   }
 
   const erroId = `senha-erro-${linkId}`
+  const erroNotaId = `nota-erro-${linkId}`
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-2">
-        <label htmlFor={`senha-${linkId}`} className="sr-only">
-          Senha de liberação de {titulo}
-        </label>
-        <Input
-          ref={inputRef}
-          id={`senha-${linkId}`}
-          data-inline-password
-          type="text"
-          inputMode="text"
-          autoComplete="off"
-          autoCapitalize="none"
-          spellCheck={false}
-          placeholder="Senha"
-          value={senha}
-          onChange={(event) => {
-            setSenha(event.target.value)
-            if (erro) setErro(null)
-          }}
-          disabled={bloqueado}
-          aria-invalid={erro ? true : undefined}
-          aria-describedby={erro ? erroId : undefined}
-          className={cn(
-            "h-8 w-32 border-amber-500/60",
-            "focus-visible:border-amber-500 focus-visible:ring-amber-500/30",
-            "[-webkit-text-security:disc]"
-          )}
-        />
-        <Button
-          type="submit"
-          size="sm"
-          variant="secondary"
-          disabled={bloqueado}
-          aria-label={`Concluir ${titulo}`}
-          className="min-w-11 border-amber-500/60 text-amber-700 dark:text-amber-300"
-        >
-          {concluido ? (
-            <CheckIcon className="text-emerald-600 dark:text-emerald-400" />
-          ) : enviando ? (
-            <LoaderCircleIcon className="animate-spin" />
-          ) : bloqueio > 0 ? (
-            `${bloqueio}s`
-          ) : (
-            "OK"
-          )}
-        </Button>
-      </div>
+    <form onSubmit={handleSubmit}>
+      <FieldGroup className="w-full max-w-60 gap-3">
+        <Field data-invalid={erroNota ? true : undefined}>
+          <FieldLabel htmlFor={`nota-${linkId}`}>
+            Nota{" "}
+            <span className="font-normal text-muted-foreground">
+              (opcional)
+            </span>
+          </FieldLabel>
+          <Input
+            ref={notaRef}
+            id={`nota-${linkId}`}
+            type="number"
+            inputMode="numeric"
+            min={0}
+            step={1}
+            placeholder="—"
+            value={nota}
+            onChange={(event) => {
+              setNota(event.target.value)
+              if (erroNota) setErroNota(null)
+            }}
+            disabled={bloqueado}
+            aria-invalid={erroNota ? true : undefined}
+            aria-describedby={erroNota ? erroNotaId : undefined}
+            className="w-24"
+          />
+          {erroNota && <FieldError id={erroNotaId}>{erroNota}</FieldError>}
+        </Field>
 
-      {erro && (
-        <p id={erroId} role="alert" className="text-xs text-destructive">
-          {erro}
-        </p>
-      )}
+        <Field data-invalid={erro ? true : undefined}>
+          <FieldLabel htmlFor={`senha-${linkId}`}>Senha</FieldLabel>
+          <div className="flex items-center gap-2">
+            <Input
+              ref={inputRef}
+              id={`senha-${linkId}`}
+              data-inline-password
+              type="text"
+              inputMode="text"
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              placeholder="••••"
+              value={senha}
+              onChange={(event) => {
+                setSenha(event.target.value)
+                if (erro) setErro(null)
+              }}
+              disabled={bloqueado}
+              aria-invalid={erro ? true : undefined}
+              aria-describedby={erro ? erroId : undefined}
+              className={cn("w-32", "[-webkit-text-security:disc]")}
+            />
+            <Button
+              type="submit"
+              size="sm"
+              disabled={bloqueado}
+              aria-label={`Concluir ${titulo}`}
+              className="min-w-11"
+            >
+              {concluido ? (
+                <CheckIcon />
+              ) : enviando ? (
+                <LoaderCircleIcon className="animate-spin" />
+              ) : bloqueio > 0 ? (
+                `${bloqueio}s`
+              ) : (
+                "OK"
+              )}
+            </Button>
+          </div>
+          {erro && <FieldError id={erroId}>{erro}</FieldError>}
+        </Field>
+      </FieldGroup>
     </form>
   )
 }

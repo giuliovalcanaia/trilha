@@ -29,7 +29,8 @@ export async function markLinkAsStarted(aplicacaoId: number, linkId: number) {
 export async function completeLink(
   aplicacaoId: number,
   linkId: number,
-  senha: string
+  senha: string,
+  pontuacao: number | null
 ) {
   const supabase = await createClient()
   const { data } = await supabase.auth.getClaims()
@@ -42,6 +43,7 @@ export async function completeLink(
     p_aplicacao_id: aplicacaoId,
     p_link_id: linkId,
     p_senha: senha,
+    p_pontuacao: pontuacao,
   })
 
   if (error) {
