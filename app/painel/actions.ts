@@ -195,7 +195,12 @@ async function movePastaTo(
     .select("id")
     .maybeSingle()
 
-  if (error || !data) return fail("Pasta não encontrada.")
+  if (error || !data) {
+    if (error?.message.includes("shared_folder_root")) {
+      return fail("A pasta compartilhada só pode ser movida pelo dono.")
+    }
+    return fail("Pasta não encontrada.")
+  }
 
   revalidatePainel()
   return ok("Pasta movida.")
@@ -293,6 +298,66 @@ export async function renamePasta(
   return ok("Pasta renomeada.")
 }
 
+export async function shareFolder(
+  pastaId: number,
+  email: string
+): Promise<ActionResult> {
+  const teacher = await getTeacher()
+  if (!teacher) return fail("Sessão expirada. Entre novamente.")
+
+  if (!Number.isInteger(pastaId) || pastaId <= 0) return fail("Pasta inválida.")
+
+  const valor = email.trim()
+  if (!valor) return fail("Informe o e-mail do professor.")
+
+  const { error } = await teacher.supabase.rpc("share_folder", {
+    p_pasta_id: pastaId,
+    p_email: valor,
+  })
+
+  if (error) {
+    if (error.message.includes("professor_not_found")) {
+      return fail("Nenhum professor cadastrado com esse e-mail.")
+    }
+    if (error.message.includes("cannot_share_with_self")) {
+      return fail("Você já tem acesso a esta pasta.")
+    }
+    if (error.message.includes("invalid_email")) {
+      return fail("Informe um e-mail válido.")
+    }
+    if (error.message.includes("folder_not_found")) {
+      return fail("Você não pode compartilhar esta pasta.")
+    }
+    return fail("Não foi possível compartilhar a pasta.")
+  }
+
+  revalidatePainel(`/painel/pastas/${pastaId}`)
+  return ok("Pasta compartilhada.")
+}
+
+export async function unshareFolder(
+  pastaId: number,
+  professorId: number
+): Promise<ActionResult> {
+  const teacher = await getTeacher()
+  if (!teacher) return fail("Sessão expirada. Entre novamente.")
+
+  if (!Number.isInteger(pastaId) || pastaId <= 0) return fail("Pasta inválida.")
+  if (!Number.isInteger(professorId) || professorId <= 0) {
+    return fail("Professor inválido.")
+  }
+
+  const { error } = await teacher.supabase.rpc("unshare_folder", {
+    p_pasta_id: pastaId,
+    p_professor_id: professorId,
+  })
+
+  if (error) return fail("Não foi possível remover o acesso.")
+
+  revalidatePainel(`/painel/pastas/${pastaId}`)
+  return ok("Acesso removido.")
+}
+
 export async function movePasta(
   _prev: ActionResult,
   formData: FormData
@@ -322,8 +387,14 @@ export async function trashPasta(
     p_pasta_id: id,
   })
 
-  if (error || !data)
+  if (error || !data) {
+    if (error?.message.includes("shared_folder_root")) {
+      return fail(
+        "A pasta compartilhada só pode ser movida para a lixeira pelo dono."
+      )
+    }
     return fail("Não foi possível mover a pasta para a lixeira.")
+  }
 
   revalidatePainel()
   return ok("Pasta movida para a lixeira.", data)
@@ -348,8 +419,14 @@ export async function trashSelecionados(
     p_atividades: atividades,
   })
 
-  if (error || !data)
+  if (error || !data) {
+    if (error?.message.includes("shared_folder_root")) {
+      return fail(
+        `A pasta compartilhada só pode ser movida para a lixeira pelo dono.`
+      )
+    }
     return fail("Não foi possível mover os itens para a lixeira.")
+  }
 
   revalidatePainel()
   return ok(
@@ -553,7 +630,6 @@ export async function updateActivityShuffle(
     .from("atividades")
     .update({ embaralhar_links: embaralhar })
     .eq("id", atividadeId)
-    .eq("professor_id", teacher.professorId)
     .is("deleted_at", null)
     .select("id")
     .maybeSingle()
@@ -765,7 +841,12 @@ export async function purgeTrash(
     p_trash_id: trashId,
   })
 
-  if (error) return fail("Não foi possível excluir o item definitivamente.")
+  if (error) {
+    if (error.message.includes("shared_folder_root")) {
+      return fail("A pasta compartilhada só pode ser excluída pelo dono.")
+    }
+    return fail("Não foi possível excluir o item definitivamente.")
+  }
 
   revalidatePainel()
   return ok("Item excluído definitivamente.")
@@ -783,7 +864,7 @@ export async function emptyTrash(
   if (error) return fail("Não foi possível esvaziar a lixeira.")
 
   revalidatePainel()
-  return ok("Lixeira esvaziada.")
+  return ok("Itens de sua propriedade removidos da lixeira.")
 }
 
 // ---------------------------------------------------------

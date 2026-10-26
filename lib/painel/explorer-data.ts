@@ -1,5 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
-import { pastaBreadcrumb, type PastaRow } from "@/lib/pastas"
+import {
+  pastaBreadcrumb,
+  pastasComRaizesVisiveis,
+  type PastaRow,
+} from "@/lib/pastas"
 
 export type AplicacaoInfo = {
   codigo: string
@@ -26,6 +30,16 @@ export type ExplorerPasta = ExplorerPastaBase & {
   atividadeCount: number
 }
 
+export type PastaCompartilhamento = {
+  isOwner: boolean
+  owner: { nome: string; email: string | null }
+  compartilhamentos: {
+    professorId: number
+    nome: string
+    email: string | null
+  }[]
+}
+
 export type ExplorerData = {
   pastas: ExplorerPastaBase[]
   pastasAtuais: ExplorerPasta[]
@@ -34,6 +48,7 @@ export type ExplorerData = {
   atividadesAtuais: ExplorerAtividade[]
   breadcrumb: PastaRow[]
   pastaAtual: PastaRow | null
+  compartilhamento: PastaCompartilhamento | null
 }
 
 /**
@@ -65,13 +80,48 @@ export async function loadExplorerData(
     supabase.from("aplicacoes").select("atividade_id, codigo"),
   ])
 
-  const pastasAtivas = pastas ?? []
+  const pastasVisiveis = pastasComRaizesVisiveis(pastas ?? [])
   const pastaAtual =
     pastaId === null
       ? null
-      : (pastasAtivas.find((pasta) => pasta.id === pastaId) ?? null)
+      : (pastasVisiveis.find((pasta) => pasta.id === pastaId) ?? null)
 
   if (pastaId !== null && !pastaAtual) return null
+
+  let compartilhamento: PastaCompartilhamento | null = null
+
+  if (pastaAtual) {
+    const { data, error } = await supabase.rpc("get_pasta_compartilhamento", {
+      p_pasta_id: pastaAtual.id,
+    })
+
+    if (!error && data) {
+      const bruto = data as unknown as {
+        is_owner?: boolean
+        owner?: { nome?: string; email?: string | null }
+        compartilhamentos?: {
+          professor_id?: number
+          nome?: string
+          email?: string | null
+        }[]
+      }
+
+      compartilhamento = {
+        isOwner: bruto.is_owner === true,
+        owner: {
+          nome: bruto.owner?.nome ?? "",
+          email: bruto.owner?.email ?? null,
+        },
+        compartilhamentos: (bruto.compartilhamentos ?? [])
+          .filter((item) => typeof item.professor_id === "number")
+          .map((item) => ({
+            professorId: item.professor_id as number,
+            nome: item.nome ?? "",
+            email: item.email ?? null,
+          })),
+      }
+    }
+  }
 
   const linksPorAtividade = new Map<number, number>()
   for (const link of links ?? []) {
@@ -89,7 +139,7 @@ export async function loadExplorerData(
   }
 
   const pastasPorPai = new Map<number | null, number>()
-  for (const pasta of pastasAtivas) {
+  for (const pasta of pastasVisiveis) {
     pastasPorPai.set(
       pasta.parent_id,
       (pastasPorPai.get(pasta.parent_id) ?? 0) + 1
@@ -104,7 +154,7 @@ export async function loadExplorerData(
     )
   }
 
-  const pastasAtuais: ExplorerPasta[] = pastasAtivas
+  const pastasAtuais: ExplorerPasta[] = pastasVisiveis
     .filter((pasta) => pasta.parent_id === pastaId)
     .map((pasta) => ({
       ...pasta,
@@ -125,11 +175,12 @@ export async function loadExplorerData(
   )
 
   return {
-    pastas: pastasAtivas,
+    pastas: pastasVisiveis,
     pastasAtuais,
     todasAtividades,
     atividadesAtuais,
-    breadcrumb: pastaBreadcrumb(pastasAtivas, pastaId),
+    breadcrumb: pastaBreadcrumb(pastasVisiveis, pastaId),
     pastaAtual,
+    compartilhamento,
   }
 }

@@ -15,6 +15,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { createClient } from "@/lib/supabase/server"
+import { pastasComRaizesVisiveis } from "@/lib/pastas"
 
 export default async function PainelLayout({
   children,
@@ -66,13 +67,15 @@ export default async function PainelLayout({
   const email =
     typeof data.claims.email === "string" ? data.claims.email : undefined
 
+  const pastasVisiveis = pastasComRaizesVisiveis(pastas ?? [])
+
   return (
-    <SelecaoProvider pastas={pastas ?? []}>
+    <SelecaoProvider pastas={pastasVisiveis}>
       <SidebarProvider>
         <AppSidebar
           professor={professor}
           email={email}
-          pastas={pastas ?? []}
+          pastas={pastasVisiveis}
           atividadePastas={atividadePastas ?? []}
           trashCount={(pastasNaLixeira ?? 0) + (atividadesNaLixeira ?? 0)}
         />

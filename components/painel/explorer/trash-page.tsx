@@ -40,14 +40,14 @@ export function TrashPage({ groups }: { groups: TrashGroup[] }) {
           <ConfirmAction
             action={emptyTrash}
             fields={{}}
-            title="Esvaziar a lixeira?"
-            description="Todos os itens serão excluídos definitivamente, incluindo códigos, nomes e progresso dos alunos. Essa ação não pode ser desfeita."
-            confirmLabel="Esvaziar lixeira"
-            triggerLabel="Esvaziar lixeira"
+            title="Esvaziar seus itens?"
+            description="Serão excluídos definitivamente os itens da sua lixeira que pertencem a você ou às suas pastas, incluindo códigos, nomes e progresso dos alunos. Itens compartilhados de outros professores continuam na lixeira. Essa ação não pode ser desfeita."
+            confirmLabel="Esvaziar meus itens"
+            triggerLabel="Esvaziar meus itens"
             trigger={
               <Button variant="outline" type="button">
                 <Trash2Icon data-icon="inline-start" />
-                Esvaziar lixeira
+                Esvaziar meus itens
               </Button>
             }
           />

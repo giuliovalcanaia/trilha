@@ -53,7 +53,6 @@ export default async function Page({
     .from("atividades")
     .select("id, titulo, subtitulo, status, embaralhar_links")
     .eq("id", atividadeId)
-    .eq("professor_id", professor.id)
     .is("deleted_at", null)
     .maybeSingle()
 

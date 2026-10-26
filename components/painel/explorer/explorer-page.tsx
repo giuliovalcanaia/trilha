@@ -36,6 +36,7 @@ import {
   TrashSelecionadosConfirm,
 } from "@/components/painel/explorer/explorer-dialogs"
 import { ExplorerItemView } from "@/components/painel/explorer/explorer-item"
+import { FolderShareBar } from "@/components/painel/folder-share-bar"
 import {
   ExplorerToolbar,
   targetKey,
@@ -426,6 +427,14 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
         onDragLeave={() => setDragOverKey(null)}
         dragOverKey={dragOverKey}
       />
+
+      {data.pastaAtual && data.compartilhamento && (
+        <FolderShareBar
+          pastaId={data.pastaAtual.id}
+          nome={data.pastaAtual.nome}
+          compartilhamento={data.compartilhamento}
+        />
+      )}
 
       {visiveis.length === 0 ? (
         <EmptyExplorer

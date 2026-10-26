@@ -116,3 +116,17 @@ export function pastaDescendantIds(
 
   return resultado
 }
+
+/**
+ * Uma pasta compartilhada pode ter um pai que não está visível para quem
+ * recebeu o acesso. Nesse caso ela é exibida como raiz, sem quebrar a árvore.
+ */
+export function pastasComRaizesVisiveis<T extends PastaRow>(pastas: T[]): T[] {
+  const visiveis = new Set(pastas.map((pasta) => pasta.id))
+
+  return pastas.map((pasta) =>
+    pasta.parent_id !== null && !visiveis.has(pasta.parent_id)
+      ? { ...pasta, parent_id: null }
+      : pasta
+  )
+}

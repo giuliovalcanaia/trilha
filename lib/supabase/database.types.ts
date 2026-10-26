@@ -261,6 +261,39 @@ export type Database = {
           },
         ]
       }
+      pasta_compartilhamentos: {
+        Row: {
+          created_at: string
+          pasta_id: number
+          professor_id: number
+        }
+        Insert: {
+          created_at?: string
+          pasta_id: number
+          professor_id: number
+        }
+        Update: {
+          created_at?: string
+          pasta_id?: number
+          professor_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pasta_compartilhamentos_pasta_id_fkey"
+            columns: ["pasta_id"]
+            isOneToOne: false
+            referencedRelation: "pastas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pasta_compartilhamentos_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "professores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pastas: {
         Row: {
           created_at: string
@@ -294,11 +327,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pastas_parent_same_professor_fk"
-            columns: ["parent_id", "professor_id"]
+            foreignKeyName: "pastas_parent_id_fkey"
+            columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "pastas"
-            referencedColumns: ["id", "professor_id"]
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "pastas_professor_id_fkey"
@@ -440,6 +473,10 @@ export type Database = {
         Args: { p_participacao_id: number }
         Returns: undefined
       }
+      get_pasta_compartilhamento: {
+        Args: { p_pasta_id: number }
+        Returns: Json
+      }
       join_activity: {
         Args: { p_codigo: string; p_nome: string }
         Returns: Json
@@ -481,6 +518,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      share_folder: {
+        Args: { p_email: string; p_pasta_id: number }
+        Returns: undefined
+      }
       trash_atividade: {
         Args: { p_atividade_id: number }
         Returns: string
@@ -492,6 +533,10 @@ export type Database = {
       trash_pasta: {
         Args: { p_pasta_id: number }
         Returns: string
+      }
+      unshare_folder: {
+        Args: { p_pasta_id: number; p_professor_id: number }
+        Returns: undefined
       }
       update_my_progress: {
         Args: { p_aplicacao_id: number; p_link_id: number; p_status: string }
