@@ -188,7 +188,6 @@ export function InlinePasswordForm({
             type="text"
             inputMode="decimal"
             autoComplete="off"
-            placeholder="ex.: 8,5"
             value={nota}
             onChange={(event) => {
               setNota(event.target.value)
