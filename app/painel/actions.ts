@@ -527,6 +527,7 @@ export async function createAtividade(
   const titulo = field(formData, "titulo")
   const pastaId = idField(formData, "pasta_id")
   const senha = field(formData, "senha")
+  const embaralharLinks = field(formData, "embaralhar_links") === "true"
   const lista = parseLinkList(textField(formData, "links_texto"))
 
   if (!titulo) return fail("Informe o título da atividade.")
@@ -552,6 +553,7 @@ export async function createAtividade(
       subtitulo: optionalField(formData, "subtitulo"),
       pasta_id: pastaId,
       professor_id: teacher.professorId,
+      embaralhar_links: embaralharLinks,
     })
     .select("id")
     .single()

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useTransition } from "react"
+import { useEffect, useState, useTransition, type ReactNode } from "react"
 import { ShuffleIcon } from "lucide-react"
 
 import { updateActivityShuffle } from "@/app/painel/actions"
@@ -19,6 +19,58 @@ import {
 } from "@/components/ui/field"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "@/components/ui/toast"
+
+/**
+ * Card visual da opção de embaralhar. Usado tanto na edição (salva na hora)
+ * quanto na criação (valor vai junto no formulário).
+ */
+export function ShuffleLinksCardShell({
+  id,
+  ativo,
+  onChange,
+  disabled,
+  extra,
+}: {
+  id: string
+  ativo: boolean
+  onChange: (valor: boolean) => void
+  disabled?: boolean
+  extra?: ReactNode
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <ShuffleIcon className="size-4" />
+          Ordem dos links
+        </CardTitle>
+        <CardDescription>
+          Cada aluno recebe uma ordem aleatória e estável, sorteada quando
+          entra. A lista da aba Alunos e a pré-visualização continuam na ordem
+          original.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Field orientation="horizontal">
+          <FieldContent>
+            <FieldLabel htmlFor={id}>Embaralhar para os alunos</FieldLabel>
+            <FieldDescription>
+              A sequência é sorteada uma vez e não muda a cada acesso.
+            </FieldDescription>
+          </FieldContent>
+          <Switch
+            id={id}
+            checked={ativo}
+            onCheckedChange={onChange}
+            disabled={disabled}
+          />
+        </Field>
+
+        {extra}
+      </CardContent>
+    </Card>
+  )
+}
 
 /**
  * Opção de embaralhar a ordem dos links por aluno. Salva no mesmo instante em
@@ -66,43 +118,19 @@ export function ShuffleLinksCard({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ShuffleIcon className="size-4" />
-          Ordem dos links
-        </CardTitle>
-        <CardDescription>
-          Cada aluno recebe uma ordem aleatória e estável, sorteada quando
-          entra. A lista da aba Alunos e a pré-visualização continuam na ordem
-          original.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <Field orientation="horizontal">
-          <FieldContent>
-            <FieldLabel htmlFor="embaralhar-links">
-              Embaralhar para os alunos
-            </FieldLabel>
-            <FieldDescription>
-              A sequência é sorteada uma vez e não muda a cada acesso.
-            </FieldDescription>
-          </FieldContent>
-          <Switch
-            id="embaralhar-links"
-            checked={ativo}
-            onCheckedChange={alterar}
-            disabled={pending}
-          />
-        </Field>
-
-        {totalAlunos > 0 && (
+    <ShuffleLinksCardShell
+      id="embaralhar-links"
+      ativo={ativo}
+      onChange={alterar}
+      disabled={pending}
+      extra={
+        totalAlunos > 0 ? (
           <p className="text-xs text-muted-foreground">
             {totalAlunos} aluno(s) já entraram. A mudança vale apenas para quem
             entrar depois; quem já está na atividade mantém a ordem atual.
           </p>
-        )}
-      </CardContent>
-    </Card>
+        ) : null
+      }
+    />
   )
 }

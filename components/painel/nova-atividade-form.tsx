@@ -8,6 +8,7 @@ import { AtividadeCabecalho } from "@/components/painel/atividade-cabecalho"
 import { AtividadeTabsList } from "@/components/painel/atividade-tabs-list"
 import { LinksTextarea } from "@/components/painel/links-textarea"
 import { SenhaField } from "@/components/painel/senha-field"
+import { ShuffleLinksField } from "@/components/painel/shuffle-links-field"
 import { SubmitButton } from "@/components/painel/submit-button"
 import {
   Card,
@@ -80,6 +81,8 @@ export function NovaAtividadeForm({
               <LinksTextarea id="links-nova-atividade" />
             </CardContent>
           </Card>
+
+          <ShuffleLinksField />
 
           <Card>
             <CardHeader>
