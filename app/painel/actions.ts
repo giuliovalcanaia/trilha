@@ -7,6 +7,7 @@ import { redirect } from "next/navigation"
 
 import { parseLinkList } from "@/lib/links"
 import { fallbackLinkTitle, lookupLinkTitles } from "@/lib/link-preview"
+import { parseNota } from "@/lib/nota"
 import { separarChaves } from "@/lib/selecao"
 import { createClient } from "@/lib/supabase/server"
 
@@ -941,11 +942,9 @@ export async function updateStudentProgress(
 
   let pontuacao: number | null = null
   if (pontuacaoRaw) {
-    const parsed = Number(pontuacaoRaw)
-    if (!Number.isInteger(parsed) || parsed < 0) {
-      return fail("A nota precisa ser um número inteiro maior ou igual a zero.")
-    }
-    pontuacao = parsed
+    const resultado = parseNota(pontuacaoRaw)
+    if (!resultado.ok) return fail(resultado.erro)
+    pontuacao = resultado.valor
   }
 
   const { error } = await teacher.supabase.rpc("set_student_progress", {

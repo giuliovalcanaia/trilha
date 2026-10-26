@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { toast } from "@/components/ui/toast"
+import { formatarNota, parseNota } from "@/lib/nota"
 
 type Status = "aberta" | "fazendo" | "concluida" | "bloqueada"
 
@@ -48,7 +49,7 @@ export function ProgressoAlunoForm({
   const statusRecebido: Status =
     status in statusLabels ? (status as Status) : "bloqueada"
   const [statusLocal, setStatusLocal] = useState<Status>(statusRecebido)
-  const [nota, setNota] = useState(pontuacao?.toString() ?? "")
+  const [nota, setNota] = useState(formatarNota(pontuacao))
   const notaDoServidor = useRef(pontuacao)
   const [pending, startTransition] = useTransition()
 
@@ -66,7 +67,7 @@ export function ProgressoAlunoForm({
     if (notaDoServidor.current === pontuacao) return
 
     notaDoServidor.current = pontuacao
-    setNota(pontuacao?.toString() ?? "")
+    setNota(formatarNota(pontuacao))
   }, [pontuacao])
 
   function montarFormData(novoStatus: Status, novaPontuacao: string) {
@@ -109,17 +110,14 @@ export function ProgressoAlunoForm({
     const valor = String(
       new FormData(event.currentTarget).get("pontuacao") ?? ""
     ).trim()
-    const numero = valor === "" ? null : Number(valor)
+    const resultado = parseNota(valor)
 
-    if (numero !== null && (!Number.isInteger(numero) || numero < 0)) {
-      toast.add({
-        type: "error",
-        title: "A nota precisa ser um número inteiro maior ou igual a zero.",
-      })
+    if (!resultado.ok) {
+      toast.add({ type: "error", title: resultado.erro })
       return
     }
 
-    const concluir = valor !== ""
+    const concluir = resultado.valor !== null
     const novoStatus: Status = concluir ? "concluida" : statusLocal
 
     if (concluir) setStatusLocal("concluida")
@@ -188,8 +186,9 @@ export function ProgressoAlunoForm({
         <Input
           id={`nota-${participacaoId}-${linkId}`}
           name="pontuacao"
-          type="number"
-          min={0}
+          type="text"
+          inputMode="decimal"
+          autoComplete="off"
           className="w-20"
           value={nota}
           onChange={(event) => setNota(event.target.value)}

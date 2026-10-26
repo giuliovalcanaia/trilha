@@ -14,11 +14,12 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/components/ui/toast"
+import { parseNota } from "@/lib/nota"
 import { cn } from "@/lib/utils"
 
 const errorMessages: Record<string, string> = {
   invalid_password: "Senha incorreta. Confira com o professor.",
-  invalid_score: "A nota deve ser um número inteiro maior ou igual a 0.",
+  invalid_score: "A nota precisa ser maior ou igual a 0.",
   link_locked: "Este link não está disponível para conclusão.",
   password_not_set: "O professor ainda não definiu a senha desta atividade.",
   application_closed: "Esta turma foi encerrada pelo professor.",
@@ -120,17 +121,15 @@ export function InlinePasswordForm({
 
     if (bloqueado) return
 
-    let pontuacao: number | null = null
+    const resultadoNota = parseNota(nota)
 
-    if (nota.trim()) {
-      pontuacao = Number(nota)
-
-      if (!Number.isInteger(pontuacao) || pontuacao < 0) {
-        setErroNota("Informe um número inteiro maior ou igual a 0.")
-        notaRef.current?.focus()
-        return
-      }
+    if (!resultadoNota.ok) {
+      setErroNota(resultadoNota.erro)
+      notaRef.current?.focus()
+      return
     }
+
+    const pontuacao = resultadoNota.valor
 
     setErroNota(null)
 
@@ -186,11 +185,10 @@ export function InlinePasswordForm({
           <Input
             ref={notaRef}
             id={`nota-${linkId}`}
-            type="number"
-            inputMode="numeric"
-            min={0}
-            step={1}
-            placeholder="—"
+            type="text"
+            inputMode="decimal"
+            autoComplete="off"
+            placeholder="ex.: 8,5"
             value={nota}
             onChange={(event) => {
               setNota(event.target.value)
@@ -216,7 +214,6 @@ export function InlinePasswordForm({
               autoComplete="off"
               autoCapitalize="none"
               spellCheck={false}
-              placeholder="••••"
               value={senha}
               onChange={(event) => {
                 setSenha(event.target.value)
