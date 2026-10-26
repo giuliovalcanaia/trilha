@@ -542,6 +542,28 @@ export async function updateAtividade(
   return { error: null }
 }
 
+export async function updateActivityShuffle(
+  atividadeId: number,
+  embaralhar: boolean
+): Promise<ActionResult> {
+  const teacher = await getTeacher()
+  if (!teacher) return fail("Sessão expirada. Entre novamente.")
+
+  const { data, error } = await teacher.supabase
+    .from("atividades")
+    .update({ embaralhar_links: embaralhar })
+    .eq("id", atividadeId)
+    .eq("professor_id", teacher.professorId)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle()
+
+  if (error || !data) return fail("Não foi possível salvar a opção.")
+
+  revalidatePainel(`/painel/atividades/${atividadeId}`)
+  return { error: null }
+}
+
 export async function renameAtividade(
   _prev: ActionResult,
   formData: FormData

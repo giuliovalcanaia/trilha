@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
-import { ArrowLeftIcon, EyeIcon } from "lucide-react"
+import { ArrowLeftIcon, EyeIcon, ShuffleIcon } from "lucide-react"
 
 import { ClickableCard, type ActivityStatus } from "@/components/clickable-card"
 import { StudentActivityHeader } from "@/components/student-activity-header"
@@ -51,7 +51,7 @@ export default async function Page({
 
   const { data: atividade } = await supabase
     .from("atividades")
-    .select("id, titulo, subtitulo, status")
+    .select("id, titulo, subtitulo, status, embaralhar_links")
     .eq("id", atividadeId)
     .eq("professor_id", professor.id)
     .is("deleted_at", null)
@@ -95,6 +95,12 @@ export default async function Page({
             <Badge variant={publicada ? "default" : "secondary"}>
               {statusLabels[atividade.status] ?? atividade.status}
             </Badge>
+            {atividade.embaralhar_links && (
+              <Badge variant="outline">
+                <ShuffleIcon />
+                Ordem aleatória por aluno
+              </Badge>
+            )}
             <span className="text-muted-foreground">
               Nenhum progresso será registrado.
             </span>

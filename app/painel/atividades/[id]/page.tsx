@@ -18,6 +18,7 @@ import { LinksSaveForm } from "@/components/painel/links-save-form"
 import { PreviewActivityButton } from "@/components/painel/preview-activity-button"
 import { ProgressoAlunoForm } from "@/components/painel/progresso-aluno-form"
 import { SenhaField } from "@/components/painel/senha-field"
+import { ShuffleLinksCard } from "@/components/painel/shuffle-links-card"
 import { SubmitButton } from "@/components/painel/submit-button"
 import { TrashActivityButton } from "@/components/painel/trash-activity-button"
 import { UnsavedChangesGuard } from "@/components/painel/unsaved-changes-guard"
@@ -67,7 +68,7 @@ export default async function Page({
 
   const { data: atividade } = await supabase
     .from("atividades")
-    .select("id, titulo, subtitulo, pasta_id, status")
+    .select("id, titulo, subtitulo, pasta_id, status, embaralhar_links")
     .eq("id", atividadeId)
     .is("deleted_at", null)
     .maybeSingle()
@@ -352,8 +353,9 @@ export default async function Page({
               <CardHeader>
                 <CardTitle>Links</CardTitle>
                 <CardDescription>
-                  A ordem das linhas é a ordem que o aluno vê. Salve para
-                  aplicar as mudanças.
+                  A ordem das linhas é a ordem original, usada na aba Alunos e
+                  na pré-visualização. Com o embaralhamento ativo, cada aluno
+                  recebe uma sequência sorteada. Salve para aplicar as mudanças.
                 </CardDescription>
                 <CardAction>
                   <div className="flex flex-wrap items-center justify-end gap-2">
@@ -366,6 +368,12 @@ export default async function Page({
                 <LinksEditorTextarea />
               </CardContent>
             </Card>
+
+            <ShuffleLinksCard
+              atividadeId={atividade.id}
+              embaralharLinks={atividade.embaralhar_links}
+              totalAlunos={totalAlunos}
+            />
 
             <Card>
               <CardHeader>

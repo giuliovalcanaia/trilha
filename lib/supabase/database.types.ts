@@ -98,6 +98,7 @@ export type Database = {
         Row: {
           created_at: string
           deleted_at: string | null
+          embaralhar_links: boolean
           id: number
           pasta_id: number | null
           professor_id: number
@@ -111,6 +112,7 @@ export type Database = {
         Insert: {
           created_at?: string
           deleted_at?: string | null
+          embaralhar_links?: boolean
           id?: number
           pasta_id?: number | null
           professor_id: number
@@ -124,6 +126,7 @@ export type Database = {
         Update: {
           created_at?: string
           deleted_at?: string | null
+          embaralhar_links?: boolean
           id?: number
           pasta_id?: number | null
           professor_id?: number
@@ -334,6 +337,7 @@ export type Database = {
         Row: {
           created_at: string
           link_id: number
+          ordem_embaralhada: number | null
           participacao_id: number
           pontuacao: number | null
           status: string
@@ -342,6 +346,7 @@ export type Database = {
         Insert: {
           created_at?: string
           link_id: number
+          ordem_embaralhada?: number | null
           participacao_id: number
           pontuacao?: number | null
           status?: string
@@ -350,6 +355,7 @@ export type Database = {
         Update: {
           created_at?: string
           link_id?: number
+          ordem_embaralhada?: number | null
           participacao_id?: number
           pontuacao?: number | null
           status?: string

@@ -147,7 +147,7 @@ export default async function Page({
       .order("ordem", { ascending: true }),
     supabase
       .from("progresso_estudante")
-      .select("link_id, status")
+      .select("link_id, status, ordem_embaralhada")
       .eq("participacao_id", participacao.id),
   ])
 
@@ -155,7 +155,26 @@ export default async function Page({
     (progresso ?? []).map((row) => [row.link_id, toStatus(row.status)])
   )
 
-  const items = (links ?? []).map((link) => ({
+  // Quando o professor ativou o embaralhamento, a sequência do aluno vive em
+  // `progresso_estudante.ordem_embaralhada`; a ordem canônica dos links não é
+  // usada nesse caso. A lista pode continuar na ordem canônica para quem
+  // entrou antes da opção ser ligada.
+  const ordemPorLink = new Map(
+    (progresso ?? []).map((row) => [row.link_id, row.ordem_embaralhada])
+  )
+  const embaralhada = (progresso ?? []).some(
+    (row) => row.ordem_embaralhada !== null
+  )
+
+  const linksNaOrdemDoAluno = embaralhada
+    ? [...(links ?? [])].sort(
+        (a, b) =>
+          (ordemPorLink.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+          (ordemPorLink.get(b.id) ?? Number.MAX_SAFE_INTEGER)
+      )
+    : (links ?? [])
+
+  const items = linksNaOrdemDoAluno.map((link) => ({
     id: link.id,
     titulo: link.titulo,
     href: link.href,
