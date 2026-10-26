@@ -14,6 +14,7 @@ import {
   MoreHorizontalIcon,
   PencilIcon,
   PlusIcon,
+  Share2Icon,
   Trash2Icon,
 } from "lucide-react"
 
@@ -66,6 +67,7 @@ type ExplorerItemProps = {
   onOpen: () => void
   onNewFolder: () => void
   onNewActivity: () => void
+  onShare: () => void
   onRename: () => void
   onDuplicate: () => void
   onMove: () => void
@@ -90,6 +92,7 @@ export function ExplorerItemView({
   onOpen,
   onNewFolder,
   onNewActivity,
+  onShare,
   onRename,
   onDuplicate,
   onMove,
@@ -148,6 +151,13 @@ export function ExplorerItemView({
         label: "Nova atividade aqui",
         icon: <PlusIcon />,
         onSelect: onNewActivity,
+      },
+      {
+        kind: "item",
+        key: "compartilhar",
+        label: "Compartilhar...",
+        icon: <Share2Icon />,
+        onSelect: onShare,
       }
     )
   }

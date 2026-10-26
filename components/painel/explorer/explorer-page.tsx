@@ -3,7 +3,13 @@
 import * as React from "react"
 import { useEffect, useMemo, useState, useTransition } from "react"
 import Link from "next/link"
-import { FolderIcon, FolderPlusIcon, PlusIcon, SearchIcon } from "lucide-react"
+import {
+  FolderIcon,
+  FolderPlusIcon,
+  PlusIcon,
+  SearchIcon,
+  Share2Icon,
+} from "lucide-react"
 import { useRouter } from "next/navigation"
 
 import {
@@ -36,7 +42,7 @@ import {
   TrashSelecionadosConfirm,
 } from "@/components/painel/explorer/explorer-dialogs"
 import { ExplorerItemView } from "@/components/painel/explorer/explorer-item"
-import { FolderShareBar } from "@/components/painel/folder-share-bar"
+import { FolderShareDialog } from "@/components/painel/explorer/folder-share-dialog"
 import {
   ExplorerToolbar,
   targetKey,
@@ -61,6 +67,7 @@ type DialogState =
   | { kind: "nova-pasta"; parentId: number | null }
   | { kind: "renomear"; item: ExplorerItem }
   | { kind: "mover"; item: ExplorerItem }
+  | { kind: "compartilhar"; pastaId: number; nome: string }
   | { kind: "lixeira"; item: ExplorerItem }
   | { kind: "lixeira-selecao" }
   | null
@@ -74,7 +81,8 @@ function normalizar(value: string) {
 
 export function ExplorerPage({ data }: { data: ExplorerData }) {
   const router = useRouter()
-  const pastaAtualId = data.pastaAtual?.id ?? null
+  const pastaAtual = data.pastaAtual
+  const pastaAtualId = pastaAtual?.id ?? null
   const { selecionados, selecionar, definir, limpar } = useSelecao()
   const [view, setView] = useState<"lista" | "grade">("lista")
   const [ordem, setOrdem] = useState<OrdemExplorer>("nome-asc")
@@ -428,14 +436,6 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
         dragOverKey={dragOverKey}
       />
 
-      {data.pastaAtual && data.compartilhamento && (
-        <FolderShareBar
-          pastaId={data.pastaAtual.id}
-          nome={data.pastaAtual.nome}
-          compartilhamento={data.compartilhamento}
-        />
-      )}
-
       {visiveis.length === 0 ? (
         <EmptyExplorer
           buscando={termo.length > 0}
@@ -445,6 +445,16 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
           }
           newActivityHref={newActivityHref}
           extra={novoItem}
+          onShare={
+            pastaAtual
+              ? () =>
+                  setDialog({
+                    kind: "compartilhar",
+                    pastaId: pastaAtual.id,
+                    nome: pastaAtual.nome,
+                  })
+              : undefined
+          }
         />
       ) : (
         <div
@@ -475,6 +485,15 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
               onNewActivity={() => {
                 if (isPasta(item)) {
                   router.push(`/painel/atividades/nova?pasta=${item.id}`)
+                }
+              }}
+              onShare={() => {
+                if (isPasta(item)) {
+                  setDialog({
+                    kind: "compartilhar",
+                    pastaId: item.id,
+                    nome: item.nome,
+                  })
                 }
               }}
               onRename={() => setDialog({ kind: "renomear", item })}
@@ -535,6 +554,17 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
         />
       )}
 
+      {dialog?.kind === "compartilhar" && (
+        <FolderShareDialog
+          open
+          pastaId={dialog.pastaId}
+          nome={dialog.nome}
+          onOpenChange={(open) => {
+            if (!open) setDialog(null)
+          }}
+        />
+      )}
+
       {dialog?.kind === "lixeira" && (
         <TrashConfirm
           open
@@ -566,12 +596,14 @@ function EmptyExplorer({
   onNewFolder,
   newActivityHref,
   extra,
+  onShare,
 }: {
   buscando: boolean
   pastaAtualNome: string | null
   onNewFolder: () => void
   newActivityHref: string
   extra: React.ReactNode
+  onShare?: () => void
 }) {
   if (buscando) {
     return (
@@ -617,6 +649,12 @@ function EmptyExplorer({
             <PlusIcon />
             Nova atividade
           </ContextMenuItem>
+          {onShare && (
+            <ContextMenuItem onClick={onShare}>
+              <Share2Icon />
+              Compartilhar esta pasta
+            </ContextMenuItem>
+          )}
         </ContextMenuGroup>
       </ContextMenuContent>
     </ContextMenu>

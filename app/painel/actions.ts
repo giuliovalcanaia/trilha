@@ -8,6 +8,10 @@ import { redirect } from "next/navigation"
 import { parseLinkList } from "@/lib/links"
 import { fallbackLinkTitle, lookupLinkTitles } from "@/lib/link-preview"
 import { parseNota } from "@/lib/nota"
+import {
+  normalizarPastaCompartilhamento,
+  type PastaCompartilhamento,
+} from "@/lib/painel/compartilhamento"
 import { separarChaves } from "@/lib/selecao"
 import { createClient } from "@/lib/supabase/server"
 
@@ -296,6 +300,45 @@ export async function renamePasta(
 
   revalidatePainel()
   return ok("Pasta renomeada.")
+}
+
+export type FolderShareResult = {
+  error: string | null
+  compartilhamento: PastaCompartilhamento | null
+}
+
+/** Carrega dono e acessos da pasta sob demanda (ao abrir o diálogo). */
+export async function getFolderShare(
+  pastaId: number
+): Promise<FolderShareResult> {
+  const teacher = await getTeacher()
+  if (!teacher) {
+    return {
+      error: "Sessão expirada. Entre novamente.",
+      compartilhamento: null,
+    }
+  }
+
+  if (!Number.isInteger(pastaId) || pastaId <= 0) {
+    return { error: "Pasta inválida.", compartilhamento: null }
+  }
+
+  const { data, error } = await teacher.supabase.rpc(
+    "get_pasta_compartilhamento",
+    { p_pasta_id: pastaId }
+  )
+
+  if (error || !data) {
+    return {
+      error: "Não foi possível carregar o compartilhamento.",
+      compartilhamento: null,
+    }
+  }
+
+  return {
+    error: null,
+    compartilhamento: normalizarPastaCompartilhamento(data),
+  }
 }
 
 export async function shareFolder(

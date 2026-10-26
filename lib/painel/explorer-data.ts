@@ -30,16 +30,6 @@ export type ExplorerPasta = ExplorerPastaBase & {
   atividadeCount: number
 }
 
-export type PastaCompartilhamento = {
-  isOwner: boolean
-  owner: { nome: string; email: string | null }
-  compartilhamentos: {
-    professorId: number
-    nome: string
-    email: string | null
-  }[]
-}
-
 export type ExplorerData = {
   pastas: ExplorerPastaBase[]
   pastasAtuais: ExplorerPasta[]
@@ -48,7 +38,6 @@ export type ExplorerData = {
   atividadesAtuais: ExplorerAtividade[]
   breadcrumb: PastaRow[]
   pastaAtual: PastaRow | null
-  compartilhamento: PastaCompartilhamento | null
 }
 
 /**
@@ -87,41 +76,6 @@ export async function loadExplorerData(
       : (pastasVisiveis.find((pasta) => pasta.id === pastaId) ?? null)
 
   if (pastaId !== null && !pastaAtual) return null
-
-  let compartilhamento: PastaCompartilhamento | null = null
-
-  if (pastaAtual) {
-    const { data, error } = await supabase.rpc("get_pasta_compartilhamento", {
-      p_pasta_id: pastaAtual.id,
-    })
-
-    if (!error && data) {
-      const bruto = data as unknown as {
-        is_owner?: boolean
-        owner?: { nome?: string; email?: string | null }
-        compartilhamentos?: {
-          professor_id?: number
-          nome?: string
-          email?: string | null
-        }[]
-      }
-
-      compartilhamento = {
-        isOwner: bruto.is_owner === true,
-        owner: {
-          nome: bruto.owner?.nome ?? "",
-          email: bruto.owner?.email ?? null,
-        },
-        compartilhamentos: (bruto.compartilhamentos ?? [])
-          .filter((item) => typeof item.professor_id === "number")
-          .map((item) => ({
-            professorId: item.professor_id as number,
-            nome: item.nome ?? "",
-            email: item.email ?? null,
-          })),
-      }
-    }
-  }
 
   const linksPorAtividade = new Map<number, number>()
   for (const link of links ?? []) {
@@ -181,6 +135,5 @@ export async function loadExplorerData(
     atividadesAtuais,
     breadcrumb: pastaBreadcrumb(pastasVisiveis, pastaId),
     pastaAtual,
-    compartilhamento,
   }
 }
