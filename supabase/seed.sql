@@ -5,6 +5,7 @@
 -- reset do stack local. Credenciais de teste:
 --
 --   professor:  professor@trilha.test / senha123
+--   professor2: professor2@trilha.test / senha123 (para testar compartilhamento)
 --   atividade:  "Daily Routines" (publicada)
 --   entrada:    TESTE1
 --   liberação:  aula123
@@ -64,6 +65,65 @@ values (
   'aaaaaaaa-0000-4000-8000-000000000001',
   'aaaaaaaa-0000-4000-8000-000000000001',
   '{"sub":"aaaaaaaa-0000-4000-8000-000000000001","email":"professor@trilha.test","email_verified":true,"phone_verified":false}'::jsonb,
+  'email',
+  now(),
+  now(),
+  now()
+)
+on conflict do nothing;
+
+-- ---------- Segundo professor (para testar compartilhamento de pastas) ----------
+insert into auth.users (
+  instance_id,
+  id,
+  aud,
+  role,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  created_at,
+  updated_at,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  confirmation_token,
+  email_change,
+  email_change_token_new,
+  recovery_token
+)
+values (
+  '00000000-0000-0000-0000-000000000000',
+  'dddddddd-0000-4000-8000-000000000001',
+  'authenticated',
+  'authenticated',
+  'professor2@trilha.test',
+  extensions.crypt('senha123', extensions.gen_salt('bf')),
+  now(),
+  now(),
+  now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  '{"full_name":"Professor Dois"}'::jsonb,
+  '',
+  '',
+  '',
+  ''
+)
+on conflict (id) do nothing;
+
+insert into auth.identities (
+  id,
+  user_id,
+  provider_id,
+  identity_data,
+  provider,
+  last_sign_in_at,
+  created_at,
+  updated_at
+)
+values (
+  gen_random_uuid(),
+  'dddddddd-0000-4000-8000-000000000001',
+  'dddddddd-0000-4000-8000-000000000001',
+  '{"sub":"dddddddd-0000-4000-8000-000000000001","email":"professor2@trilha.test","email_verified":true,"phone_verified":false}'::jsonb,
   'email',
   now(),
   now(),
@@ -199,3 +259,11 @@ begin
   where l.atividade_id = v_atividade_id;
 end;
 $$;
+
+-- ---------- Pasta própria do segundo professor ----------
+-- Assim o explorador dele não nasce vazio e dá para comparar com a pasta
+-- compartilhada pelo professor de teste.
+insert into public.pastas (professor_id, nome)
+select id, 'Aulas do Professor Dois'
+from public.professores
+where user_id = 'dddddddd-0000-4000-8000-000000000001';
