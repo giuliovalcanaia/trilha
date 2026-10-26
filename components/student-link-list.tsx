@@ -2,7 +2,7 @@
 
 import { markLinkAsStarted } from "@/app/atividade/actions"
 import { ClickableCard, type ActivityStatus } from "@/components/clickable-card"
-import { ConcludeLinkDialog } from "@/components/conclude-link-dialog"
+import { InlinePasswordForm } from "@/components/inline-password-form"
 
 export type StudentLink = {
   id: number
@@ -28,7 +28,7 @@ export function StudentLinkList({
           status={link.status}
           footer={
             link.status === "fazendo" ? (
-              <ConcludeLinkDialog
+              <InlinePasswordForm
                 aplicacaoId={aplicacaoId}
                 linkId={link.id}
                 titulo={link.titulo}
