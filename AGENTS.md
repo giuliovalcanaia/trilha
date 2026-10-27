@@ -62,7 +62,7 @@ npx supabase db push --db-url "<SUPABASE_STAGING_DB_URL>" [--include-seed]
 
 ## Current state
 
-- Organização: `components/{aluno,auth,layout,painel,ui}`, `lib/dominio` (regras puras: links, notas, pastas, seleção), `lib/painel` (dados do painel), `lib/supabase` e `lib/{env,format}.ts`. Fronteiras de erro em `app/error.tsx`, `app/global-error.tsx`, `app/not-found.tsx`, `app/painel/loading.tsx` e `app/atividade/loading.tsx`.
+- Organização: `components/{aluno,auth,layout,painel,ui}`, `lib/dominio` (regras puras: links, notas, pastas, seleção), `lib/painel` (dados do painel), `lib/supabase` e `lib/{env,format}.ts`. Fronteiras de erro em `app/error.tsx`, `app/global-error.tsx` e `app/not-found.tsx`. Não há `loading.tsx` de rota: o conteúdo anterior permanece até a próxima tela carregar. O explorador troca de pasta no cliente (sem skeleton); a tela do aluno usa o estado “Entrando...” do formulário como feedback.
 - Auth is wired: teacher e-mail/password via `/signup` + `/login`, and students through Supabase anonymous sign-ins.
 - E-mail confirmation is **off** in the Supabase project (built-in mailer is limited to 2 e-mails/hour, no custom SMTP): `signUp` returns a session and `/signup` goes straight to `/painel`. `/auth/confirm` and `/auth/error` are dormant; re-enable confirmation and the no-session branch in `components/auth/signup-form.tsx` together if that ever changes.
 - The Supabase schema is in `snake_case` (`professores`, `turmas`, `pastas`, `pasta_compartilhamentos`, `atividades`, `links`, `estudantes`, `aplicacoes`, `participacoes`, `progresso_estudante`, `atividade_senhas`) with RLS on every table. Migrations live in `supabase/migrations/`; the plan that produced the first ones is `/home/giulio/.opencode/plan/supabase-auth-plan.md`.
