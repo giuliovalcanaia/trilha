@@ -16,10 +16,6 @@ import {
   type StatusProgresso,
 } from "@/lib/dominio/status"
 
-type Status = StatusProgresso
-
-const statusLabels = ROTULOS_PROGRESSO
-
 type ProgressoAlunoFormProps = {
   atividadeId: number
   participacaoId: number
@@ -47,7 +43,8 @@ export function ProgressoAlunoForm({
 }: ProgressoAlunoFormProps) {
   const router = useRouter()
   const statusRecebido = statusProgresso(status)
-  const [statusLocal, setStatusLocal] = useState<Status>(statusRecebido)
+  const [statusLocal, setStatusLocal] =
+    useState<StatusProgresso>(statusRecebido)
   const [nota, setNota] = useState(formatarNota(pontuacao))
   const [statusServidor, setStatusServidor] = useState(statusRecebido)
   const [notaServidor, setNotaServidor] = useState(pontuacao)
@@ -70,7 +67,7 @@ export function ProgressoAlunoForm({
     setNota(formatarNota(pontuacao))
   }
 
-  function montarFormData(novoStatus: Status, novaPontuacao: string) {
+  function montarFormData(novoStatus: StatusProgresso, novaPontuacao: string) {
     const formData = new FormData()
     formData.set("atividade_id", String(atividadeId))
     formData.set("participacao_id", String(participacaoId))
@@ -80,7 +77,7 @@ export function ProgressoAlunoForm({
     return formData
   }
 
-  function salvarStatus(novoStatus: Status) {
+  function salvarStatus(novoStatus: StatusProgresso) {
     if (novoStatus === statusLocal || pending) return
 
     setStatusLocal(novoStatus)
@@ -118,7 +115,7 @@ export function ProgressoAlunoForm({
     }
 
     const concluir = resultado.valor !== null
-    const novoStatus: Status = concluir ? "concluida" : statusLocal
+    const novoStatus: StatusProgresso = concluir ? "concluida" : statusLocal
 
     if (concluir) setStatusLocal("concluida")
 
@@ -153,7 +150,7 @@ export function ProgressoAlunoForm({
       <div className="min-w-40 flex-1 text-sm">
         <span className="text-muted-foreground">{indice}.</span> {titulo}
         <span className="block text-xs text-muted-foreground">
-          {statusLabels[statusLocal]}
+          {ROTULOS_PROGRESSO[statusLocal]}
         </span>
       </div>
 
@@ -167,7 +164,9 @@ export function ProgressoAlunoForm({
         <NativeSelect
           id={`status-${participacaoId}-${linkId}`}
           value={statusLocal}
-          onChange={(event) => salvarStatus(event.target.value as Status)}
+          onChange={(event) =>
+            salvarStatus(event.target.value as StatusProgresso)
+          }
           disabled={pending}
           size="sm"
           className="w-full"

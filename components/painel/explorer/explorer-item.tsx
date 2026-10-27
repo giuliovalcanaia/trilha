@@ -42,16 +42,8 @@ import {
   type ExplorerItem,
 } from "@/components/painel/explorer/explorer-types"
 import { rotuloAtividade } from "@/lib/dominio/status"
+import { formatarDataHoraLonga, formatarDataIso } from "@/lib/format"
 import { cn } from "@/lib/utils"
-
-const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
-  dateStyle: "short",
-})
-
-const dateTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
-  dateStyle: "long",
-  timeStyle: "short",
-})
 
 type ExplorerItemProps = {
   item: ExplorerItem
@@ -353,10 +345,10 @@ export function ExplorerItemView({
             )}
             <span
               className="hidden w-24 shrink-0 text-right text-xs text-muted-foreground tabular-nums md:block"
-              title={`Criado em ${dateTimeFormatter.format(new Date(item.created_at))}`}
+              title={`Criado em ${formatarDataHoraLonga(item.created_at)}`}
             >
               <span className="sr-only">Criado em </span>
-              {dateFormatter.format(new Date(item.created_at))}
+              {formatarDataIso(item.created_at)}
             </span>
           </>
         ) : (

@@ -20,11 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import type { TrashGroup } from "@/lib/data/lixeira"
-
-const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
-  dateStyle: "short",
-  timeStyle: "short",
-})
+import { formatarDataHora } from "@/lib/format"
 
 export function TrashPage({ groups }: { groups: TrashGroup[] }) {
   return (
@@ -93,7 +89,7 @@ export function TrashPage({ groups }: { groups: TrashGroup[] }) {
                       </div>
                       <CardDescription>
                         Original: {group.origem} · Movido em{" "}
-                        {dateFormatter.format(new Date(group.deletedAt))}
+                        {formatarDataHora(group.deletedAt)}
                         {group.tipo === "pasta" && (
                           <>
                             {" "}

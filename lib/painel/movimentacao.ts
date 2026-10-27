@@ -2,36 +2,8 @@ import type { ProfessorCtx } from "@/lib/actions/with-professor"
 import { fail, ok, type ActionResult } from "@/lib/actions/result"
 import { falhaDeRpc } from "@/lib/actions/rpc-error"
 import { revalidatePainel } from "@/lib/actions/revalidate"
+import { pastaDescendantIds } from "@/lib/dominio/pastas"
 import type { SupabaseClient } from "@/lib/supabase/server"
-
-async function pastaDescendants(supabase: SupabaseClient, rootId: number) {
-  const { data } = await supabase
-    .from("pastas")
-    .select("id, parent_id")
-    .is("deleted_at", null)
-  const children = new Map<number, number[]>()
-
-  for (const pasta of data ?? []) {
-    if (pasta.parent_id === null) continue
-    const list = children.get(pasta.parent_id) ?? []
-    list.push(pasta.id)
-    children.set(pasta.parent_id, list)
-  }
-
-  const result = new Set<number>([rootId])
-  const queue = [rootId]
-
-  while (queue.length > 0) {
-    const current = queue.shift()!
-    for (const child of children.get(current) ?? []) {
-      if (result.has(child)) continue
-      result.add(child)
-      queue.push(child)
-    }
-  }
-
-  return result
-}
 
 async function validarDestinoPasta(
   supabase: SupabaseClient,
@@ -44,8 +16,14 @@ async function validarDestinoPasta(
     return "Uma pasta não pode ficar dentro dela mesma."
   }
 
-  const descendants = await pastaDescendants(supabase, pastaId)
-  if (descendants.has(parentId)) {
+  const { data: pastas, error: pastasError } = await supabase
+    .from("pastas")
+    .select("id, nome, parent_id")
+    .is("deleted_at", null)
+
+  if (pastasError) throw new Error("pasta_descendentes_lookup_failed")
+
+  if (pastaDescendantIds(pastas ?? [], pastaId).has(parentId)) {
     return "Uma pasta não pode ficar dentro de uma subpasta dela."
   }
 

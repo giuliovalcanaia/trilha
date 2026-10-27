@@ -8,6 +8,7 @@ import { falhaDeRpc } from "@/lib/actions/rpc-error"
 import {
   withProfessorCall,
   withProfessorForm,
+  type ProfessorCtx,
 } from "@/lib/actions/with-professor"
 
 const trashIdSchema = z.object({
@@ -15,6 +16,21 @@ const trashIdSchema = z.object({
 })
 
 const vazioSchema = z.object({})
+
+/** Restauração usada pelo formulário e pelo "Desfazer". */
+async function restaurar(
+  professor: ProfessorCtx,
+  trashId: string
+): Promise<ActionResult> {
+  const { error } = await professor.supabase.rpc("restore_trash", {
+    p_trash_id: trashId,
+  })
+
+  if (error) return falhaDeRpc(error, "Não foi possível restaurar o item.")
+
+  revalidatePainel()
+  return ok("Item restaurado.")
+}
 
 export async function restoreTrash(
   _prev: ActionResult,
@@ -24,18 +40,7 @@ export async function restoreTrash(
     "restoreTrash",
     trashIdSchema,
     formData,
-    async (professor, { trash_id }) => {
-      const { error } = await professor.supabase.rpc("restore_trash", {
-        p_trash_id: trash_id,
-      })
-
-      if (error) {
-        return falhaDeRpc(error, "Não foi possível restaurar o item.")
-      }
-
-      revalidatePainel()
-      return ok("Item restaurado.")
-    }
+    (professor, { trash_id }) => restaurar(professor, trash_id)
   )
 }
 
@@ -43,16 +48,7 @@ export async function undoTrash(trashId: string): Promise<ActionResult> {
   return withProfessorCall("undoTrash", async (professor) => {
     if (!trashId) return fail("Item da lixeira inválido.", "validacao")
 
-    const { error } = await professor.supabase.rpc("restore_trash", {
-      p_trash_id: trashId,
-    })
-
-    if (error) {
-      return falhaDeRpc(error, "Não foi possível restaurar o item.")
-    }
-
-    revalidatePainel()
-    return ok("Item restaurado.")
+    return restaurar(professor, trashId)
   })
 }
 

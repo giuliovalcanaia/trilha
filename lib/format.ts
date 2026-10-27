@@ -6,11 +6,19 @@ export const TIME_ZONE = "America/Sao_Paulo"
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "short",
+  timeZone: TIME_ZONE,
 })
 
 const dateTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "short",
   timeStyle: "short",
+  timeZone: TIME_ZONE,
+})
+
+const dateTimeLongFormatter = new Intl.DateTimeFormat("pt-BR", {
+  dateStyle: "long",
+  timeStyle: "short",
+  timeZone: TIME_ZONE,
 })
 
 const isoDateFormatter = new Intl.DateTimeFormat("en-CA", {
@@ -33,7 +41,17 @@ export function formatarData(value: string | null) {
   return value ? dateFormatter.format(new Date(`${value}T12:00:00`)) : "—"
 }
 
+/** Data curta de um timestamp ISO (`timestamptz`). */
+export function formatarDataIso(value: string | null) {
+  return value ? dateFormatter.format(new Date(value)) : "—"
+}
+
 /** Formata um timestamp ISO (`timestamptz`). */
 export function formatarDataHora(value: string | null) {
   return value ? dateTimeFormatter.format(new Date(value)) : "—"
+}
+
+/** Data longa + hora de um timestamp ISO (`timestamptz`). */
+export function formatarDataHoraLonga(value: string | null) {
+  return value ? dateTimeLongFormatter.format(new Date(value)) : "—"
 }
