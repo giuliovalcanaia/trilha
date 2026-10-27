@@ -59,6 +59,7 @@ import { pastaBreadcrumb, pastaDescendantIds } from "@/lib/dominio/pastas"
 import { itemKey } from "@/lib/dominio/selecao"
 import type { ExplorerData } from "@/lib/painel/explorer-data"
 import { useSelecao } from "@/components/painel/selecao-context"
+import { useNavegacaoPastas } from "@/hooks/use-navegacao-pastas"
 import { useStoredPreference } from "@/hooks/use-stored-preference"
 import { cn } from "@/lib/utils"
 
@@ -83,8 +84,7 @@ function normalizar(value: string) {
 
 export function ExplorerPage({ data }: { data: ExplorerData }) {
   const router = useRouter()
-  const pastaAtual = data.pastaAtual
-  const pastaAtualId = pastaAtual?.id ?? null
+  const { pastaAtualId, navegar } = useNavegacaoPastas()
   const { selecionados, selecionar, definir, limpar } = useSelecao()
   const [view, setView] = useStoredPreference("painel:view", VIEWS, "lista")
   const [ordem, setOrdem] = useStoredPreference(
@@ -93,57 +93,74 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
     "nome-asc"
   )
   const [query, setQuery] = useState("")
+  const [pastaAnterior, setPastaAnterior] = useState(pastaAtualId)
   const [dialog, setDialog] = useState<DialogState>(null)
   const [dragging, setDragging] = useState<ExplorerItem | null>(null)
   const [dragOverKey, setDragOverKey] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
+  // A pasta mudou via History API (sem remontar o componente): a busca some,
+  // como se a tela tivesse sido trocada.
+  if (pastaAnterior !== pastaAtualId) {
+    setPastaAnterior(pastaAtualId)
+    setQuery("")
+  }
+
+  const pastaAtual = useMemo(
+    () =>
+      pastaAtualId === null
+        ? null
+        : (data.pastas.find((pasta) => pasta.id === pastaAtualId) ?? null),
+    [data.pastas, pastaAtualId]
+  )
+
+  const breadcrumb = useMemo(
+    () => pastaBreadcrumb(data.pastas, pastaAtualId),
+    [data.pastas, pastaAtualId]
+  )
+
+  const pastasAtuais = useMemo(
+    () => data.pastas.filter((pasta) => pasta.parent_id === pastaAtualId),
+    [data.pastas, pastaAtualId]
+  )
+
+  const atividadesAtuais = useMemo(
+    () =>
+      data.todasAtividades.filter(
+        (atividade) => atividade.pasta_id === pastaAtualId
+      ),
+    [data.todasAtividades, pastaAtualId]
+  )
+
   const itens = useMemo<ExplorerItem[]>(
     () => [
-      ...data.pastasAtuais.map((pasta) => ({
+      ...pastasAtuais.map((pasta) => ({
         ...pasta,
         tipo: "pasta" as const,
       })),
-      ...data.atividadesAtuais.map((atividade) => ({
+      ...atividadesAtuais.map((atividade) => ({
         ...atividade,
         tipo: "atividade" as const,
       })),
     ],
-    [data.pastasAtuais, data.atividadesAtuais]
+    [pastasAtuais, atividadesAtuais]
   )
 
   // Mesma lista, mas com todas as pastas e atividades do professor — usada
   // enquanto há um termo de busca.
-  const itensGlobais = useMemo<ExplorerItem[]>(() => {
-    const subpastas = new Map<number, number>()
-    const atividades = new Map<number, number>()
-
-    for (const pasta of data.pastas) {
-      if (pasta.parent_id === null) continue
-      subpastas.set(pasta.parent_id, (subpastas.get(pasta.parent_id) ?? 0) + 1)
-    }
-
-    for (const atividade of data.todasAtividades) {
-      if (atividade.pasta_id === null) continue
-      atividades.set(
-        atividade.pasta_id,
-        (atividades.get(atividade.pasta_id) ?? 0) + 1
-      )
-    }
-
-    return [
+  const itensGlobais = useMemo<ExplorerItem[]>(
+    () => [
       ...data.pastas.map((pasta) => ({
         ...pasta,
         tipo: "pasta" as const,
-        pastaCount: subpastas.get(pasta.id) ?? 0,
-        atividadeCount: atividades.get(pasta.id) ?? 0,
       })),
       ...data.todasAtividades.map((atividade) => ({
         ...atividade,
         tipo: "atividade" as const,
       })),
-    ]
-  }, [data.pastas, data.todasAtividades])
+    ],
+    [data.pastas, data.todasAtividades]
+  )
 
   const termo = normalizar(query.trim())
   const visiveis = useMemo(() => {
@@ -201,6 +218,10 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
   useEffect(() => {
     limpar()
   }, [pastaAtualId, limpar])
+
+  useEffect(() => {
+    window.scrollTo({ top: 0 })
+  }, [pastaAtualId])
 
   useEffect(() => {
     limpar()
@@ -268,7 +289,7 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
 
   function abrir(item: ExplorerItem) {
     if (isPasta(item)) {
-      router.push(`/painel/pastas/${item.id}`)
+      navegar(item.id)
       return
     }
     router.push(`/painel/atividades/${item.id}?aba=configuracoes`)
@@ -412,7 +433,7 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
       aria-busy={isPending}
     >
       <ExplorerToolbar
-        breadcrumb={data.breadcrumb}
+        breadcrumb={breadcrumb}
         query={query}
         onQueryChange={setQuery}
         view={view}
@@ -432,7 +453,7 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
       {visiveis.length === 0 ? (
         <EmptyExplorer
           buscando={termo.length > 0}
-          pastaAtualNome={data.pastaAtual?.nome ?? null}
+          pastaAtualNome={pastaAtual?.nome ?? null}
           onNewFolder={() =>
             setDialog({ kind: "nova-pasta", parentId: pastaAtualId })
           }

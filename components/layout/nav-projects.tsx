@@ -1,6 +1,6 @@
 "use client"
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { useMemo, useState } from "react"
 import { ChevronRightIcon, FolderIcon, HouseIcon } from "lucide-react"
 
@@ -17,6 +17,7 @@ import {
   type AtividadePastaRow,
   type PastaRow,
 } from "@/lib/dominio/pastas"
+import { useNavegacaoPastas } from "@/hooks/use-navegacao-pastas"
 import { cn } from "@/lib/utils"
 
 export function NavProjects({
@@ -27,8 +28,8 @@ export function NavProjects({
   atividadePastas: AtividadePastaRow[]
 }) {
   const pathname = usePathname()
-  const router = useRouter()
   const searchParams = useSearchParams()
+  const { navegar } = useNavegacaoPastas()
 
   const pastaDaAtividade = useMemo(
     () =>
@@ -110,7 +111,7 @@ export function NavProjects({
                   else setHomeAberta(true)
                 }
 
-                router.push("/painel")
+                navegar(null)
               }}
               onKeyDown={(event) => {
                 if (
@@ -165,7 +166,7 @@ export function NavProjects({
                       alternarPasta(pasta.id)
                     }
 
-                    router.push(url)
+                    navegar(pasta.id)
                   }}
                   onKeyDown={(event) => {
                     if (event.key === "ArrowRight" && temFilhos && !aberta) {

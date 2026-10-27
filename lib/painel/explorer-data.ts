@@ -1,9 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import {
-  pastaBreadcrumb,
-  pastasComRaizesVisiveis,
-  type PastaRow,
-} from "@/lib/dominio/pastas"
+import { pastasComRaizesVisiveis, type PastaRow } from "@/lib/dominio/pastas"
 
 export type AplicacaoInfo = {
   codigo: string
@@ -21,28 +17,25 @@ export type ExplorerAtividade = {
   aplicacoes: AplicacaoInfo[]
 }
 
-export type ExplorerPastaBase = PastaRow & {
+export type ExplorerPasta = PastaRow & {
   created_at: string
-}
-
-export type ExplorerPasta = ExplorerPastaBase & {
   pastaCount: number
   atividadeCount: number
 }
 
 export type ExplorerData = {
-  pastas: ExplorerPastaBase[]
-  pastasAtuais: ExplorerPasta[]
-  /** Todas as atividades do professor, para a busca global. */
+  /** Todas as pastas visíveis, com contadores para a listagem e a busca. */
+  pastas: ExplorerPasta[]
+  /** Todas as atividades visíveis, para a listagem e a busca global. */
   todasAtividades: ExplorerAtividade[]
-  atividadesAtuais: ExplorerAtividade[]
-  breadcrumb: PastaRow[]
-  pastaAtual: PastaRow | null
 }
 
 /**
- * Carrega as pastas/atividades ativas do professor e monta apenas o
- * conteúdo da pasta atual. As consultas são protegidas por RLS.
+ * Carrega uma única vez todo o conteúdo do explorador. A troca de pastas é
+ * feita no cliente (History API), então este payload não depende da pasta
+ * atual; `pastaId` serve apenas para validar o acesso direto pela URL.
+ *
+ * As consultas são protegidas por RLS.
  */
 export async function loadExplorerData(
   pastaId: number | null
@@ -70,12 +63,13 @@ export async function loadExplorerData(
   ])
 
   const pastasVisiveis = pastasComRaizesVisiveis(pastas ?? [])
-  const pastaAtual =
-    pastaId === null
-      ? null
-      : (pastasVisiveis.find((pasta) => pasta.id === pastaId) ?? null)
 
-  if (pastaId !== null && !pastaAtual) return null
+  if (
+    pastaId !== null &&
+    !pastasVisiveis.some((pasta) => pasta.id === pastaId)
+  ) {
+    return null
+  }
 
   const linksPorAtividade = new Map<number, number>()
   for (const link of links ?? []) {
@@ -108,13 +102,11 @@ export async function loadExplorerData(
     )
   }
 
-  const pastasAtuais: ExplorerPasta[] = pastasVisiveis
-    .filter((pasta) => pasta.parent_id === pastaId)
-    .map((pasta) => ({
-      ...pasta,
-      pastaCount: pastasPorPai.get(pasta.id) ?? 0,
-      atividadeCount: atividadesPorPasta.get(pasta.id) ?? 0,
-    }))
+  const pastasComContadores: ExplorerPasta[] = pastasVisiveis.map((pasta) => ({
+    ...pasta,
+    pastaCount: pastasPorPai.get(pasta.id) ?? 0,
+    atividadeCount: atividadesPorPasta.get(pasta.id) ?? 0,
+  }))
 
   const todasAtividades: ExplorerAtividade[] = (atividades ?? []).map(
     (atividade) => ({
@@ -124,16 +116,8 @@ export async function loadExplorerData(
     })
   )
 
-  const atividadesAtuais = todasAtividades.filter(
-    (atividade) => atividade.pasta_id === pastaId
-  )
-
   return {
-    pastas: pastasVisiveis,
-    pastasAtuais,
+    pastas: pastasComContadores,
     todasAtividades,
-    atividadesAtuais,
-    breadcrumb: pastaBreadcrumb(pastasVisiveis, pastaId),
-    pastaAtual,
   }
 }

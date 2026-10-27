@@ -7,5 +7,5 @@ export default async function Page() {
   const data = await loadExplorerData(null)
   if (!data) notFound()
 
-  return <ExplorerPage key="inicio" data={data} />
+  return <ExplorerPage data={data} />
 }
