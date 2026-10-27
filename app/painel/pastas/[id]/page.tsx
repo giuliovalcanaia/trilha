@@ -16,5 +16,5 @@ export default async function Page({
   const data = await loadExplorerData(pastaId)
   if (!data) notFound()
 
-  return <ExplorerPage data={data} />
+  return <ExplorerPage key={pastaId} data={data} />
 }

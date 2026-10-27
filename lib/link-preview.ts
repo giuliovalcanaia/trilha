@@ -1,4 +1,4 @@
-import { normalizeHttpUrl } from "./links"
+import { normalizeHttpUrl } from "./dominio/links"
 
 /**
  * Lê título e descrição de uma página para preencher o link automaticamente.

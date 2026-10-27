@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useTransition } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 
 import { updateStudentProgress } from "@/app/painel/actions"
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { toast } from "@/components/ui/toast"
-import { formatarNota, parseNota } from "@/lib/nota"
+import { formatarNota, parseNota } from "@/lib/dominio/nota"
 
 type Status = "aberta" | "fazendo" | "concluida" | "bloqueada"
 
@@ -50,25 +50,26 @@ export function ProgressoAlunoForm({
     status in statusLabels ? (status as Status) : "bloqueada"
   const [statusLocal, setStatusLocal] = useState<Status>(statusRecebido)
   const [nota, setNota] = useState(formatarNota(pontuacao))
-  const notaDoServidor = useRef(pontuacao)
+  const [statusServidor, setStatusServidor] = useState(statusRecebido)
+  const [notaServidor, setNotaServidor] = useState(pontuacao)
   const [pending, startTransition] = useTransition()
 
   // Realinha com o servidor quando a página é revalidada (inclusive após um
   // refresh em tempo real). Enquanto a gravação está em andamento, mantém a
-  // escolha otimista do professor.
-  useEffect(() => {
-    if (!pending) setStatusLocal(statusRecebido)
-  }, [statusRecebido, pending])
+  // escolha otimista do professor. Ajustar o estado durante o render evita um
+  // efeito e o render extra que ele provocaria.
+  if (!pending && statusRecebido !== statusServidor) {
+    setStatusServidor(statusRecebido)
+    setStatusLocal(statusRecebido)
+  }
 
   // Só sobrescreve a nota quando o valor vindo do servidor realmente muda.
   // Sincronizar a cada render (ou no blur) apagava o que o professor tinha
   // digitado antes do submit do formulário.
-  useEffect(() => {
-    if (notaDoServidor.current === pontuacao) return
-
-    notaDoServidor.current = pontuacao
+  if (notaServidor !== pontuacao) {
+    setNotaServidor(pontuacao)
     setNota(formatarNota(pontuacao))
-  }, [pontuacao])
+  }
 
   function montarFormData(novoStatus: Status, novaPontuacao: string) {
     const formData = new FormData()

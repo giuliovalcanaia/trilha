@@ -42,7 +42,11 @@ import {
 import { Input } from "@/components/ui/input"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { toast } from "@/components/ui/toast"
-import { flattenPastas, pastaDescendantIds, type PastaRow } from "@/lib/pastas"
+import {
+  flattenPastas,
+  pastaDescendantIds,
+  type PastaRow,
+} from "@/lib/dominio/pastas"
 import type { ExplorerItem } from "@/components/painel/explorer/explorer-types"
 import { cn } from "@/lib/utils"
 

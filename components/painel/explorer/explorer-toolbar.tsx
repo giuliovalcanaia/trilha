@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { type OrdemExplorer } from "@/components/painel/explorer/explorer-types"
-import { type PastaRow } from "@/lib/pastas"
+import { type PastaRow } from "@/lib/dominio/pastas"
 import { cn } from "@/lib/utils"
 
 const opcoesOrdem: { value: OrdemExplorer; label: string }[] = [

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 
-import { AppSidebar } from "@/components/app-sidebar"
+import { AppSidebar } from "@/components/layout/app-sidebar"
 import { SelecaoProvider } from "@/components/painel/selecao-context"
 import {
   Breadcrumb,
@@ -15,7 +15,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { createClient } from "@/lib/supabase/server"
-import { pastasComRaizesVisiveis } from "@/lib/pastas"
+import { pastasComRaizesVisiveis } from "@/lib/dominio/pastas"
 
 export default async function PainelLayout({
   children,

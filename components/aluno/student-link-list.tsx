@@ -1,8 +1,11 @@
 "use client"
 
 import { markLinkAsStarted } from "@/app/atividade/actions"
-import { ClickableCard, type ActivityStatus } from "@/components/clickable-card"
-import { InlinePasswordForm } from "@/components/inline-password-form"
+import {
+  ClickableCard,
+  type ActivityStatus,
+} from "@/components/aluno/clickable-card"
+import { InlinePasswordForm } from "@/components/aluno/inline-password-form"
 
 export type StudentLink = {
   id: number

@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation"
 
-import { StudentActivityHeader } from "@/components/student-activity-header"
-import { StudentActivityRealtime } from "@/components/student-activity-realtime"
-import { StudentLinkList } from "@/components/student-link-list"
-import type { ActivityStatus } from "@/components/clickable-card"
+import { StudentActivityHeader } from "@/components/aluno/student-activity-header"
+import { StudentActivityRealtime } from "@/components/aluno/student-activity-realtime"
+import { StudentLinkList } from "@/components/aluno/student-link-list"
+import type { ActivityStatus } from "@/components/aluno/clickable-card"
 import { Card, CardDescription, CardHeader } from "@/components/ui/card"
+import { formatarData } from "@/lib/format"
 import { createClient } from "@/lib/supabase/server"
 
 const statuses: ActivityStatus[] = [
@@ -190,14 +191,7 @@ export default async function Page({
         titulo={`${atividade.titulo} - ${participacao.nome}`}
         subtitulo={atividade.subtitulo}
         meta={
-          aplicacao.data && (
-            <>
-              Data da aula:{" "}
-              {new Intl.DateTimeFormat("pt-BR", {
-                dateStyle: "short",
-              }).format(new Date(`${aplicacao.data}T12:00:00`))}
-            </>
-          )
+          aplicacao.data && <>Data da aula: {formatarData(aplicacao.data)}</>
         }
         concluidas={concluidas}
         total={items.length}

@@ -5,14 +5,15 @@ import { randomInt } from "node:crypto"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
-import { parseLinkList } from "@/lib/links"
+import { parseLinkList } from "@/lib/dominio/links"
+import { parseNota } from "@/lib/dominio/nota"
+import { separarChaves } from "@/lib/dominio/selecao"
+import { hoje } from "@/lib/format"
 import { fallbackLinkTitle, lookupLinkTitles } from "@/lib/link-preview"
-import { parseNota } from "@/lib/nota"
 import {
   normalizarPastaCompartilhamento,
   type PastaCompartilhamento,
 } from "@/lib/painel/compartilhamento"
-import { separarChaves } from "@/lib/selecao"
 import { createClient } from "@/lib/supabase/server"
 
 export type ActionResult = {
@@ -25,17 +26,6 @@ type Supabase = Awaited<ReturnType<typeof createClient>>
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 const STATUSES = ["aberta", "fazendo", "concluida", "bloqueada"] as const
-const TODAY_FORMATTER = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "America/Sao_Paulo",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-})
-
-/** Data de hoje (`yyyy-MM-dd`) no fuso da escola. */
-function hoje() {
-  return TODAY_FORMATTER.format(new Date())
-}
 
 function field(formData: FormData, name: string) {
   const value = formData.get(name)

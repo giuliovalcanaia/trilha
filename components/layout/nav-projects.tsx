@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import { ChevronRightIcon, FolderIcon, HouseIcon } from "lucide-react"
 
 import {
@@ -16,7 +16,7 @@ import {
   pastaBreadcrumb,
   type AtividadePastaRow,
   type PastaRow,
-} from "@/lib/pastas"
+} from "@/lib/dominio/pastas"
 import { cn } from "@/lib/utils"
 
 export function NavProjects({
@@ -64,24 +64,6 @@ export function NavProjects({
       new Set(pastaBreadcrumb(pastas, pastaAtualId).map((pasta) => pasta.id))
   )
   const [homeAberta, setHomeAberta] = useState(true)
-
-  const pastasRef = useRef(pastas)
-  useEffect(() => {
-    pastasRef.current = pastas
-  }, [pastas])
-
-  // Mantém aberto somente o caminho até a pasta atual (inclusive ela):
-  // ao voltar para um nível superior, as subpastas abertas recolhem.
-  useEffect(() => {
-    if (pastaAtualId !== null) setHomeAberta(true)
-
-    const caminho =
-      pastaAtualId === null
-        ? []
-        : pastaBreadcrumb(pastasRef.current, pastaAtualId)
-
-    setExpandidas(new Set(caminho.map((pasta) => pasta.id)))
-  }, [pastaAtualId])
 
   const arvore = homeAberta ? flattenPastasVisiveis(pastas, expandidas) : []
   const homeTemFilhos = pastas.length > 0

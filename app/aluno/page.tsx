@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { UserXIcon } from "lucide-react"
 
-import { StudentNameForm } from "@/components/student-name-form"
+import { StudentNameForm } from "@/components/aluno/student-name-form"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/server"

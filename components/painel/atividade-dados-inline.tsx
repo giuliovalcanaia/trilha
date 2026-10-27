@@ -62,9 +62,7 @@ export function AtividadeDadosInline(props: AtividadeDadosInlineProps) {
     if (subtitulo && document.activeElement !== subtitulo) {
       subtitulo.textContent = subtituloSalvo
     }
-
-    if (criando) setRascunho({ titulo: tituloSalvo, subtitulo: subtituloSalvo })
-  }, [criando, subtituloSalvo, tituloSalvo])
+  }, [subtituloSalvo, tituloSalvo])
 
   function ler(el: HTMLElement | null) {
     return textoLimpo(el?.innerText)

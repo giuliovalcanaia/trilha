@@ -4,9 +4,9 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
-import { NavProjects } from "@/components/nav-projects"
-import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
+import { NavProjects } from "@/components/layout/nav-projects"
+import { NavUser } from "@/components/layout/nav-user"
+import { TeamSwitcher } from "@/components/layout/team-switcher"
 import {
   Sidebar,
   SidebarContent,
@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/sidebar"
 import { GalleryVerticalEndIcon, Trash2Icon } from "lucide-react"
 
-import { type AtividadePastaRow, type PastaRow } from "@/lib/pastas"
+import { type AtividadePastaRow, type PastaRow } from "@/lib/dominio/pastas"
 
 type Professor = {
   id: number
@@ -57,7 +57,11 @@ export function AppSidebar({
         <TeamSwitcher teams={teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavProjects pastas={pastas} atividadePastas={atividadePastas} />
+        <NavProjects
+          key={pathname}
+          pastas={pastas}
+          atividadePastas={atividadePastas}
+        />
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>

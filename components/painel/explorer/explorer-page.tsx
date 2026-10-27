@@ -48,20 +48,22 @@ import {
   targetKey,
 } from "@/components/painel/explorer/explorer-toolbar"
 import {
-  ehOrdemExplorer,
   isPasta,
   nomeDoItem,
+  ORDENS_EXPLORER,
   type ExplorerItem,
   type OrdemExplorer,
 } from "@/components/painel/explorer/explorer-types"
 import { toast } from "@/components/ui/toast"
+import { pastaBreadcrumb, pastaDescendantIds } from "@/lib/dominio/pastas"
+import { itemKey } from "@/lib/dominio/selecao"
 import type { ExplorerData } from "@/lib/painel/explorer-data"
-import { pastaBreadcrumb, pastaDescendantIds } from "@/lib/pastas"
-import { itemKey } from "@/lib/selecao"
 import { useSelecao } from "@/components/painel/selecao-context"
+import { useStoredPreference } from "@/hooks/use-stored-preference"
 import { cn } from "@/lib/utils"
 
 const DRAG_MIME = "application/x-painel-item"
+const VIEWS = ["lista", "grade"] as const
 
 type DialogState =
   | { kind: "nova-pasta"; parentId: number | null }
@@ -84,20 +86,17 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
   const pastaAtual = data.pastaAtual
   const pastaAtualId = pastaAtual?.id ?? null
   const { selecionados, selecionar, definir, limpar } = useSelecao()
-  const [view, setView] = useState<"lista" | "grade">("lista")
-  const [ordem, setOrdem] = useState<OrdemExplorer>("nome-asc")
+  const [view, setView] = useStoredPreference("painel:view", VIEWS, "lista")
+  const [ordem, setOrdem] = useStoredPreference(
+    "painel:ordem",
+    ORDENS_EXPLORER,
+    "nome-asc"
+  )
   const [query, setQuery] = useState("")
   const [dialog, setDialog] = useState<DialogState>(null)
   const [dragging, setDragging] = useState<ExplorerItem | null>(null)
   const [dragOverKey, setDragOverKey] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
-
-  useEffect(() => {
-    const salvo = window.localStorage.getItem("painel:view")
-    if (salvo === "lista" || salvo === "grade") setView(salvo)
-    const ordemSalva = window.localStorage.getItem("painel:ordem")
-    if (ehOrdemExplorer(ordemSalva)) setOrdem(ordemSalva)
-  }, [])
 
   const itens = useMemo<ExplorerItem[]>(
     () => [
@@ -202,10 +201,6 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
   useEffect(() => {
     limpar()
   }, [pastaAtualId, limpar])
-
-  useEffect(() => {
-    setQuery("")
-  }, [pastaAtualId])
 
   useEffect(() => {
     limpar()
@@ -383,12 +378,10 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
 
   function alterarVisao(nova: "lista" | "grade") {
     setView(nova)
-    window.localStorage.setItem("painel:view", nova)
   }
 
   function alterarOrdem(nova: OrdemExplorer) {
     setOrdem(nova)
-    window.localStorage.setItem("painel:ordem", nova)
   }
 
   const novoItem = (

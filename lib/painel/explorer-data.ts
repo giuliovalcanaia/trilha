@@ -3,7 +3,7 @@ import {
   pastaBreadcrumb,
   pastasComRaizesVisiveis,
   type PastaRow,
-} from "@/lib/pastas"
+} from "@/lib/dominio/pastas"
 
 export type AplicacaoInfo = {
   codigo: string

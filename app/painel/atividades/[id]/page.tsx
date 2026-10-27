@@ -32,24 +32,8 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { TabsContent } from "@/components/ui/tabs"
+import { formatarData, formatarDataHora } from "@/lib/format"
 import { createClient } from "@/lib/supabase/server"
-
-const dateTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
-  dateStyle: "short",
-  timeStyle: "short",
-})
-
-const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
-  dateStyle: "short",
-})
-
-function formatDateTime(value: string | null) {
-  return value ? dateTimeFormatter.format(new Date(value)) : "—"
-}
-
-function formatDate(value: string | null) {
-  return value ? dateFormatter.format(new Date(`${value}T12:00:00`)) : "—"
-}
 
 export default async function Page({
   params,
@@ -234,7 +218,7 @@ export default async function Page({
                             )}
                           </div>
                           <CardDescription>
-                            Criada em {formatDate(aplicacao.data)} ·{" "}
+                            Criada em {formatarData(aplicacao.data)} ·{" "}
                             {alunos.length} aluno(s)
                           </CardDescription>
                           <CardDescription>
@@ -299,8 +283,9 @@ export default async function Page({
                                         {" "}
                                         · {concluidos}/{(links ?? []).length}{" "}
                                         concluídos · início{" "}
-                                        {formatDateTime(aluno.iniciado_em)} ·
-                                        fim {formatDateTime(aluno.concluido_em)}
+                                        {formatarDataHora(aluno.iniciado_em)} ·
+                                        fim{" "}
+                                        {formatarDataHora(aluno.concluido_em)}
                                       </span>
                                     </summary>
                                     <div className="mt-3 space-y-2">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useTransition, type ReactNode } from "react"
+import { useState, useTransition, type ReactNode } from "react"
 import { ShuffleIcon } from "lucide-react"
 
 import { updateActivityShuffle } from "@/app/painel/actions"
@@ -86,12 +86,15 @@ export function ShuffleLinksCard({
   totalAlunos: number
 }) {
   const [ativo, setAtivo] = useState(embaralharLinks)
+  const [valorServidor, setValorServidor] = useState(embaralharLinks)
   const [pending, startTransition] = useTransition()
 
-  // Mantém o switch alinhado com o servidor depois de uma revalidação.
-  useEffect(() => {
+  // Mantém o switch alinhado com o servidor depois de uma revalidação, sem um
+  // efeito: ajustar o estado durante o render evita o render extra.
+  if (valorServidor !== embaralharLinks) {
+    setValorServidor(embaralharLinks)
     setAtivo(embaralharLinks)
-  }, [embaralharLinks])
+  }
 
   function alterar(valor: boolean) {
     if (pending) return

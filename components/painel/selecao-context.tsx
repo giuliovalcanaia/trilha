@@ -11,8 +11,8 @@ import {
   useState,
 } from "react"
 
-import { pastaDescendantIds, type PastaRow } from "@/lib/pastas"
-import { intervalo, itemKey } from "@/lib/selecao"
+import { pastaDescendantIds, type PastaRow } from "@/lib/dominio/pastas"
+import { intervalo, itemKey } from "@/lib/dominio/selecao"
 
 const SELETOR_INTERATIVO = [
   "button",

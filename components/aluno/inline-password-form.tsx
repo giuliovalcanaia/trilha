@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/components/ui/toast"
-import { parseNota } from "@/lib/nota"
+import { parseNota } from "@/lib/dominio/nota"
 import { cn } from "@/lib/utils"
 
 const errorMessages: Record<string, string> = {

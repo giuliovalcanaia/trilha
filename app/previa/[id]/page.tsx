@@ -3,11 +3,15 @@ import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import { ArrowLeftIcon, EyeIcon, ShuffleIcon } from "lucide-react"
 
-import { ClickableCard, type ActivityStatus } from "@/components/clickable-card"
-import { StudentActivityHeader } from "@/components/student-activity-header"
+import {
+  ClickableCard,
+  type ActivityStatus,
+} from "@/components/aluno/clickable-card"
+import { StudentActivityHeader } from "@/components/aluno/student-activity-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader } from "@/components/ui/card"
+import { formatarData } from "@/lib/format"
 import { createClient } from "@/lib/supabase/server"
 
 const statusLabels: Record<string, string> = {
@@ -15,10 +19,6 @@ const statusLabels: Record<string, string> = {
   publicada: "Ativa",
   arquivada: "Arquivada",
 }
-
-const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
-  dateStyle: "short",
-})
 
 export const metadata: Metadata = {
   title: "Pré-visualização da atividade",
@@ -137,8 +137,7 @@ export default async function Page({
               Visão do aluno
               {aplicacao?.data && (
                 <>
-                  {" · "}Data da aula:{" "}
-                  {dateFormatter.format(new Date(`${aplicacao.data}T12:00:00`))}
+                  {" · "}Data da aula: {formatarData(aplicacao.data)}
                 </>
               )}
             </>
