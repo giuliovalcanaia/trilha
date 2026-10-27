@@ -271,51 +271,50 @@ export default async function Page({
                             return (
                               <div
                                 key={aluno.id}
-                                className="rounded-lg border p-3"
+                                className="relative rounded-lg border p-3"
                               >
-                                <div className="flex items-start justify-between gap-3">
-                                  <details className="min-w-0 flex-1">
-                                    <summary className="cursor-pointer text-sm">
-                                      <span className="font-medium">
-                                        {aluno.nome}
-                                      </span>
-                                      <span className="text-muted-foreground">
-                                        {" "}
-                                        · {concluidos}/{(links ?? []).length}{" "}
-                                        concluídos · início{" "}
-                                        {formatarDataHora(aluno.iniciado_em)} ·
-                                        fim{" "}
-                                        {formatarDataHora(aluno.concluido_em)}
-                                      </span>
-                                    </summary>
-                                    <div className="mt-3 space-y-2">
-                                      {(links ?? []).map((link, index) => {
-                                        const row =
-                                          progressoPorParticipacaoLink.get(
-                                            `${aluno.id}:${link.id}`
-                                          )
-
-                                        return (
-                                          <ProgressoAlunoForm
-                                            key={link.id}
-                                            atividadeId={atividade.id}
-                                            participacaoId={aluno.id}
-                                            linkId={link.id}
-                                            indice={index + 1}
-                                            titulo={link.titulo}
-                                            status={row?.status ?? "bloqueada"}
-                                            pontuacao={row?.pontuacao ?? null}
-                                          />
+                                <details className="min-w-0">
+                                  <summary className="cursor-pointer pr-28 text-sm">
+                                    <span className="font-medium">
+                                      {aluno.nome}
+                                    </span>
+                                    <span className="text-muted-foreground">
+                                      {" "}
+                                      · {concluidos}/{(links ?? []).length}{" "}
+                                      concluídos · início{" "}
+                                      {formatarDataHora(aluno.iniciado_em)} ·
+                                      fim {formatarDataHora(aluno.concluido_em)}
+                                    </span>
+                                  </summary>
+                                  <div className="mt-3 space-y-2">
+                                    {(links ?? []).map((link, index) => {
+                                      const row =
+                                        progressoPorParticipacaoLink.get(
+                                          `${aluno.id}:${link.id}`
                                         )
-                                      })}
-                                    </div>
-                                  </details>
+
+                                      return (
+                                        <ProgressoAlunoForm
+                                          key={link.id}
+                                          atividadeId={atividade.id}
+                                          participacaoId={aluno.id}
+                                          linkId={link.id}
+                                          indice={index + 1}
+                                          titulo={link.titulo}
+                                          status={row?.status ?? "bloqueada"}
+                                          pontuacao={row?.pontuacao ?? null}
+                                        />
+                                      )
+                                    })}
+                                  </div>
+                                </details>
+                                <span className="absolute top-3 right-3">
                                   <ExpelStudentButton
                                     atividadeId={atividade.id}
                                     participacaoId={aluno.id}
                                     nome={aluno.nome}
                                   />
-                                </div>
+                                </span>
                               </div>
                             )
                           })}
