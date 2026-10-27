@@ -1,5 +1,6 @@
 import { createAtividade } from "@/app/painel/actions/atividade"
 import { NovaAtividadeForm } from "@/components/painel/nova-atividade-form"
+import { getPasta } from "@/lib/data/pasta"
 import { createClient } from "@/lib/supabase/server"
 
 export default async function Page({
@@ -13,17 +14,7 @@ export default async function Page({
     Number.isInteger(pastaId) && pastaId > 0 ? pastaId : null
 
   const supabase = await createClient()
-
-  const { data: pastas } = await supabase
-    .from("pastas")
-    .select("id, nome, parent_id")
-    .is("deleted_at", null)
-    .order("nome")
-
-  const pastaDestino =
-    pastaSolicitada === null
-      ? null
-      : ((pastas ?? []).find((item) => item.id === pastaSolicitada) ?? null)
+  const pastaDestino = await getPasta(supabase, pastaSolicitada)
 
   const voltarHref =
     pastaDestino === null ? "/painel" : `/painel/pastas/${pastaDestino.id}`

@@ -1,5 +1,7 @@
+import { getAtividadesExplorador } from "@/lib/data/atividade"
+import { getPastasAtivas } from "@/lib/data/pasta"
+import { type PastaRow } from "@/lib/dominio/pastas"
 import { createClient } from "@/lib/supabase/server"
-import { pastasComRaizesVisiveis, type PastaRow } from "@/lib/dominio/pastas"
 
 export type AplicacaoInfo = {
   codigo: string
@@ -43,26 +45,20 @@ export async function loadExplorerData(
   const supabase = await createClient()
 
   const [
-    { data: pastas },
-    { data: atividades },
-    { data: links },
-    { data: aplicacoes },
+    pastasVisiveis,
+    atividades,
+    { data: links, error: linksError },
+    { data: aplicacoes, error: aplicacoesError },
   ] = await Promise.all([
-    supabase
-      .from("pastas")
-      .select("id, nome, parent_id, created_at")
-      .is("deleted_at", null)
-      .order("nome"),
-    supabase
-      .from("atividades")
-      .select("id, titulo, subtitulo, pasta_id, status, created_at, updated_at")
-      .is("deleted_at", null)
-      .order("updated_at", { ascending: false }),
+    getPastasAtivas(supabase),
+    getAtividadesExplorador(supabase),
     supabase.from("links").select("atividade_id"),
     supabase.from("aplicacoes").select("atividade_id, codigo"),
   ])
 
-  const pastasVisiveis = pastasComRaizesVisiveis(pastas ?? [])
+  if (linksError || aplicacoesError) {
+    throw new Error("explorer_lookup_failed")
+  }
 
   if (
     pastaId !== null &&
@@ -95,7 +91,7 @@ export async function loadExplorerData(
   }
 
   const atividadesPorPasta = new Map<number | null, number>()
-  for (const atividade of atividades ?? []) {
+  for (const atividade of atividades) {
     atividadesPorPasta.set(
       atividade.pasta_id,
       (atividadesPorPasta.get(atividade.pasta_id) ?? 0) + 1
@@ -108,13 +104,11 @@ export async function loadExplorerData(
     atividadeCount: atividadesPorPasta.get(pasta.id) ?? 0,
   }))
 
-  const todasAtividades: ExplorerAtividade[] = (atividades ?? []).map(
-    (atividade) => ({
-      ...atividade,
-      links: linksPorAtividade.get(atividade.id) ?? 0,
-      aplicacoes: aplicacoesPorAtividade.get(atividade.id) ?? [],
-    })
-  )
+  const todasAtividades: ExplorerAtividade[] = atividades.map((atividade) => ({
+    ...atividade,
+    links: linksPorAtividade.get(atividade.id) ?? 0,
+    aplicacoes: aplicacoesPorAtividade.get(atividade.id) ?? [],
+  }))
 
   return {
     pastas: pastasComContadores,

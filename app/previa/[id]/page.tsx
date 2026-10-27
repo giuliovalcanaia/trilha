@@ -9,6 +9,11 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader } from "@/components/ui/card"
 import { requireProfessor } from "@/lib/auth/professor"
+import {
+  getAtividade,
+  getDataDaPrimeiraAplicacao,
+  getLinksDaAtividade,
+} from "@/lib/data/atividade"
 import { rotuloAtividade, type StatusProgresso } from "@/lib/dominio/status"
 import { formatarData } from "@/lib/format"
 
@@ -28,34 +33,18 @@ export default async function Page({
   if (!Number.isInteger(atividadeId) || atividadeId <= 0) notFound()
 
   const { supabase } = await requireProfessor()
-
-  const { data: atividade } = await supabase
-    .from("atividades")
-    .select("id, titulo, subtitulo, status, embaralhar_links")
-    .eq("id", atividadeId)
-    .is("deleted_at", null)
-    .maybeSingle()
+  const atividade = await getAtividade(supabase, atividadeId)
 
   if (!atividade) notFound()
 
-  const [{ data: links }, { data: aplicacao }] = await Promise.all([
-    supabase
-      .from("links")
-      .select("id, titulo, href, ordem")
-      .eq("atividade_id", atividade.id)
-      .order("ordem"),
-    supabase
-      .from("aplicacoes")
-      .select("data")
-      .eq("atividade_id", atividade.id)
-      .order("created_at")
-      .limit(1)
-      .maybeSingle(),
+  const [links, aplicacao] = await Promise.all([
+    getLinksDaAtividade(supabase, atividade.id),
+    getDataDaPrimeiraAplicacao(supabase, atividade.id),
   ])
 
   // O aluno que acabou de entrar vê o primeiro link aberto e o restante
   // bloqueado. Nada é gravado: a prévia é somente leitura.
-  const items = (links ?? []).map((link, index) => ({
+  const items = links.map((link, index) => ({
     id: link.id,
     titulo: link.titulo,
     href: link.href,

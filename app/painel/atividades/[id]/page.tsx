@@ -32,6 +32,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { TabsContent } from "@/components/ui/tabs"
+import { getAtividadeEditor } from "@/lib/data/atividade"
 import { ROTULOS_ATIVIDADE } from "@/lib/dominio/status"
 import { formatarData, formatarDataHora } from "@/lib/format"
 import { createClient } from "@/lib/supabase/server"
@@ -50,107 +51,39 @@ export default async function Page({
   if (!Number.isInteger(atividadeId) || atividadeId <= 0) notFound()
 
   const supabase = await createClient()
+  const dados = await getAtividadeEditor(supabase, atividadeId)
 
-  const { data: atividade } = await supabase
-    .from("atividades")
-    .select("id, titulo, subtitulo, pasta_id, status, embaralhar_links")
-    .eq("id", atividadeId)
-    .is("deleted_at", null)
-    .maybeSingle()
+  if (!dados) notFound()
 
-  if (!atividade) notFound()
-
-  const [
-    { data: pastas },
-    { data: senhaComTexto, error: senhaError },
-    { data: links },
-    { data: aplicacoes },
-  ] = await Promise.all([
-    supabase
-      .from("pastas")
-      .select("id, nome, parent_id")
-      .is("deleted_at", null)
-      .order("nome"),
-    supabase
-      .from("atividade_senhas")
-      .select("atividade_id, senha_texto")
-      .eq("atividade_id", atividadeId)
-      .maybeSingle(),
-    supabase
-      .from("links")
-      .select("id, titulo, href, ordem")
-      .eq("atividade_id", atividadeId)
-      .order("ordem"),
-    supabase
-      .from("aplicacoes")
-      .select("id, codigo, data, status")
-      .eq("atividade_id", atividadeId)
-      .order("created_at"),
-  ])
-
-  // Tolerância de rollout: se a migration da senha visível ainda não foi
-  // aplicada, segue mostrando apenas que a senha existe.
-  let senha: { atividade_id: number; senha_texto: string | null } | null =
-    senhaComTexto
-
-  if (senhaError) {
-    const { data: senhaSemTexto } = await supabase
-      .from("atividade_senhas")
-      .select("atividade_id")
-      .eq("atividade_id", atividadeId)
-      .maybeSingle()
-
-    senha = senhaSemTexto
-      ? { atividade_id: senhaSemTexto.atividade_id, senha_texto: null }
-      : null
-  }
-
-  const aplicacaoIds = (aplicacoes ?? []).map((aplicacao) => aplicacao.id)
-  const linkIds = (links ?? []).map((link) => link.id)
-
-  const { data: participacoes } = await supabase
-    .from("participacoes")
-    .select("id, aplicacao_id, nome, iniciado_em, concluido_em")
-    .in("aplicacao_id", aplicacaoIds.length > 0 ? aplicacaoIds : [-1])
-    .is("expulso_em", null)
-    .order("nome")
-
-  const participacaoIds = (participacoes ?? []).map(
-    (participacao) => participacao.id
-  )
-
-  const { data: progresso } = await supabase
-    .from("progresso_estudante")
-    .select("participacao_id, link_id, status, pontuacao")
-    .in("participacao_id", participacaoIds.length > 0 ? participacaoIds : [-1])
-    .in("link_id", linkIds.length > 0 ? linkIds : [-1])
+  const {
+    atividade,
+    pasta,
+    senha,
+    links,
+    aplicacoes,
+    participacoes,
+    progresso,
+  } = dados
 
   const progressoPorParticipacaoLink = new Map(
-    (progresso ?? []).map((row) => [
-      `${row.participacao_id}:${row.link_id}`,
-      row,
-    ])
+    progresso.map((row) => [`${row.participacao_id}:${row.link_id}`, row])
   )
 
-  const participacoesPorAplicacao = new Map<
-    number,
-    NonNullable<typeof participacoes>
-  >()
-  for (const participacao of participacoes ?? []) {
+  const participacoesPorAplicacao = new Map<number, typeof participacoes>()
+  for (const participacao of participacoes) {
     const lista = participacoesPorAplicacao.get(participacao.aplicacao_id) ?? []
     lista.push(participacao)
     participacoesPorAplicacao.set(participacao.aplicacao_id, lista)
   }
 
-  const pasta = (pastas ?? []).find((item) => item.id === atividade.pasta_id)
   const publicada = atividade.status === "publicada"
-  const totalAlunos = participacoes?.length ?? 0
+  const totalAlunos = participacoes.length
   const voltarHref = pasta ? `/painel/pastas/${pasta.id}` : "/painel"
 
   return (
     <LinksDraftProvider
       key={`${atividade.id}:${abaInicial}`}
-      initialValue={(links ?? []).map((link) => link.href).join("\n")}
+      initialValue={links.map((link) => link.href).join("\n")}
       initialTab={abaInicial}
     >
       <AtividadeTempoReal atividadeId={atividade.id} />
@@ -168,7 +101,7 @@ export default async function Page({
             <>
               <span>Pasta: {pasta?.nome ?? "Sem pasta"}</span>
               <span>Alunos: {totalAlunos}</span>
-              <span>Links: {(links ?? []).length}</span>
+              <span>Links: {links.length}</span>
             </>
           }
           acoes={
@@ -184,7 +117,7 @@ export default async function Page({
           <AtividadeTabsList modo="editar" alunosCount={totalAlunos} />
 
           <TabsContent value="alunos" className="space-y-3">
-            {!aplicacoes || aplicacoes.length === 0 ? (
+            {aplicacoes.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 Esta atividade não tem um código de entrada.
               </p>
@@ -264,7 +197,7 @@ export default async function Page({
                       ) : (
                         <div className="space-y-2">
                           {alunos.map((aluno) => {
-                            const concluidos = (links ?? []).filter(
+                            const concluidos = links.filter(
                               (link) =>
                                 progressoPorParticipacaoLink.get(
                                   `${aluno.id}:${link.id}`
@@ -283,14 +216,14 @@ export default async function Page({
                                     </span>
                                     <span className="text-muted-foreground">
                                       {" "}
-                                      · {concluidos}/{(links ?? []).length}{" "}
-                                      concluídos · início{" "}
+                                      · {concluidos}/{links.length} concluídos ·
+                                      início{" "}
                                       {formatarDataHora(aluno.iniciado_em)} ·
                                       fim {formatarDataHora(aluno.concluido_em)}
                                     </span>
                                   </summary>
                                   <div className="mt-3 space-y-2">
-                                    {(links ?? []).map((link, index) => {
+                                    {links.map((link, index) => {
                                       const row =
                                         progressoPorParticipacaoLink.get(
                                           `${aluno.id}:${link.id}`

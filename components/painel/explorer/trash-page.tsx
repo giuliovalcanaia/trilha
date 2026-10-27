@@ -19,7 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import type { TrashGroup } from "@/lib/painel/trash-data"
+import type { TrashGroup } from "@/lib/data/lixeira"
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "short",

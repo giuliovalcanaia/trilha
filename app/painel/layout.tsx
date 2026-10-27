@@ -13,7 +13,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { requireProfessor } from "@/lib/auth/professor"
-import { pastasComRaizesVisiveis } from "@/lib/dominio/pastas"
+import { getSidebarData } from "@/lib/data/pasta"
 
 export default async function PainelLayout({
   children,
@@ -24,44 +24,17 @@ export default async function PainelLayout({
   // `requireProfessor` nunca manda um aluno anônimo para /login, para não
   // criar loop com o proxy.
   const { supabase, professor, email } = await requireProfessor()
-
-  const [
-    { data: pastas },
-    { count: pastasNaLixeira },
-    { count: atividadesNaLixeira },
-    { data: atividadePastas },
-  ] = await Promise.all([
-    supabase
-      .from("pastas")
-      .select("id, nome, parent_id")
-      .is("deleted_at", null)
-      .order("nome"),
-    supabase
-      .from("pastas")
-      .select("id", { count: "exact", head: true })
-      .not("deleted_at", "is", null),
-    supabase
-      .from("atividades")
-      .select("id", { count: "exact", head: true })
-      .not("deleted_at", "is", null),
-    supabase
-      .from("atividades")
-      .select("id, pasta_id")
-      .is("deleted_at", null)
-      .not("pasta_id", "is", null),
-  ])
-
-  const pastasVisiveis = pastasComRaizesVisiveis(pastas ?? [])
+  const { pastas, atividadePastas, trashCount } = await getSidebarData(supabase)
 
   return (
-    <SelecaoProvider pastas={pastasVisiveis}>
+    <SelecaoProvider pastas={pastas}>
       <SidebarProvider>
         <AppSidebar
           professor={professor}
           email={email}
-          pastas={pastasVisiveis}
-          atividadePastas={atividadePastas ?? []}
-          trashCount={(pastasNaLixeira ?? 0) + (atividadesNaLixeira ?? 0)}
+          pastas={pastas}
+          atividadePastas={atividadePastas}
+          trashCount={trashCount}
         />
         <SidebarInset>
           <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">

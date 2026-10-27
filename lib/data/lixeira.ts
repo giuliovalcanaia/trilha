@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import type { SupabaseClient } from "@/lib/supabase/server"
 
 export type TrashGroup = {
   trashId: string
@@ -31,15 +31,22 @@ type AtividadeTrashRow = {
  * Agrupa a lixeira pelo trash_id. Cada grupo mostra apenas o item raiz
  * (a pasta excluída ou a atividade excluída sozinha).
  */
-export async function loadTrashData(): Promise<TrashGroup[]> {
-  const supabase = await createClient()
-
-  const [{ data: pastas }, { data: atividades }] = await Promise.all([
+export async function loadTrash(
+  supabase: SupabaseClient
+): Promise<TrashGroup[]> {
+  const [
+    { data: pastas, error: pastasError },
+    { data: atividades, error: atividadesError },
+  ] = await Promise.all([
     supabase.from("pastas").select("id, nome, parent_id, deleted_at, trash_id"),
     supabase
       .from("atividades")
       .select("id, titulo, pasta_id, deleted_at, trash_id"),
   ])
+
+  if (pastasError || atividadesError) {
+    throw new Error("trash_lookup_failed")
+  }
 
   const todasPastas = (pastas ?? []) as PastaTrashRow[]
   const todasAtividades = (atividades ?? []) as AtividadeTrashRow[]

@@ -5,6 +5,8 @@ import { StudentActivityRealtime } from "@/components/aluno/student-activity-rea
 import { StudentLinkList } from "@/components/aluno/student-link-list"
 import { Card, CardDescription, CardHeader } from "@/components/ui/card"
 import { getEstudante, getParticipacaoDoAluno } from "@/lib/auth/estudante"
+import { getAtividadePublica } from "@/lib/data/atividade"
+import { getLinksComProgresso } from "@/lib/data/aluno"
 import { formatarData } from "@/lib/format"
 import { statusProgresso } from "@/lib/dominio/status"
 
@@ -43,11 +45,7 @@ export default async function Page({
     />
   )
 
-  const { data: atividade } = await supabase
-    .from("atividades")
-    .select("id, titulo, subtitulo, status")
-    .eq("id", aplicacao.atividade_id)
-    .maybeSingle()
+  const atividade = await getAtividadePublica(supabase, aplicacao.atividade_id)
 
   // A entrada encerrada continua visível para o aluno (a RLS não filtra por
   // status), então esta checagem vem antes da atividade: depois de encerrar,
@@ -104,20 +102,14 @@ export default async function Page({
     )
   }
 
-  const [{ data: links }, { data: progresso }] = await Promise.all([
-    supabase
-      .from("links")
-      .select("id, titulo, href, ordem")
-      .eq("atividade_id", atividade.id)
-      .order("ordem", { ascending: true }),
-    supabase
-      .from("progresso_estudante")
-      .select("link_id, status, ordem_embaralhada")
-      .eq("participacao_id", participacao.id),
-  ])
+  const { links, progresso } = await getLinksComProgresso(
+    supabase,
+    atividade.id,
+    participacao.id
+  )
 
   const statusByLink = new Map(
-    (progresso ?? []).map((row) => [row.link_id, statusProgresso(row.status)])
+    progresso.map((row) => [row.link_id, statusProgresso(row.status)])
   )
 
   // Quando o professor ativou o embaralhamento, a sequência do aluno vive em
@@ -125,19 +117,17 @@ export default async function Page({
   // usada nesse caso. A lista pode continuar na ordem canônica para quem
   // entrou antes da opção ser ligada.
   const ordemPorLink = new Map(
-    (progresso ?? []).map((row) => [row.link_id, row.ordem_embaralhada])
+    progresso.map((row) => [row.link_id, row.ordem_embaralhada])
   )
-  const embaralhada = (progresso ?? []).some(
-    (row) => row.ordem_embaralhada !== null
-  )
+  const embaralhada = progresso.some((row) => row.ordem_embaralhada !== null)
 
   const linksNaOrdemDoAluno = embaralhada
-    ? [...(links ?? [])].sort(
+    ? [...links].sort(
         (a, b) =>
           (ordemPorLink.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
           (ordemPorLink.get(b.id) ?? Number.MAX_SAFE_INTEGER)
       )
-    : (links ?? [])
+    : links
 
   const items = linksNaOrdemDoAluno.map((link) => ({
     id: link.id,
