@@ -2,11 +2,13 @@
 
 import { revalidatePainel } from "@/lib/actions/revalidate"
 import { fail, ok, type ActionResult } from "@/lib/actions/result"
+import { falhaDeRpc } from "@/lib/actions/rpc-error"
 import {
   SESSAO_EXPIRADA,
   withProfessorCall,
 } from "@/lib/actions/with-professor"
 import { getProfessor } from "@/lib/auth/professor"
+import { AppError, mensagemDoErro } from "@/lib/dominio/erros"
 import {
   normalizarPastaCompartilhamento,
   type PastaCompartilhamento,
@@ -38,7 +40,9 @@ export async function getFolderShare(
 
   if (error || !data) {
     return {
-      error: "Não foi possível carregar o compartilhamento.",
+      error:
+        mensagemDoErro(error?.code) ??
+        "Não foi possível carregar o compartilhamento.",
       compartilhamento: null,
     }
   }
@@ -55,11 +59,11 @@ export async function shareFolder(
 ): Promise<ActionResult> {
   return withProfessorCall("shareFolder", async (professor) => {
     if (!Number.isInteger(pastaId) || pastaId <= 0) {
-      return fail("Pasta inválida.")
+      return fail("Pasta inválida.", "validacao")
     }
 
     const valor = email.trim()
-    if (!valor) return fail("Informe o e-mail do professor.")
+    if (!valor) throw new AppError("TRL26")
 
     const { error } = await professor.supabase.rpc("share_folder", {
       p_pasta_id: pastaId,
@@ -67,19 +71,9 @@ export async function shareFolder(
     })
 
     if (error) {
-      if (error.message.includes("professor_not_found")) {
-        return fail("Nenhum professor cadastrado com esse e-mail.")
-      }
-      if (error.message.includes("cannot_share_with_self")) {
-        return fail("Você já tem acesso a esta pasta.")
-      }
-      if (error.message.includes("invalid_email")) {
-        return fail("Informe um e-mail válido.")
-      }
-      if (error.message.includes("folder_not_found")) {
-        return fail("Você não pode compartilhar esta pasta.")
-      }
-      return fail("Não foi possível compartilhar a pasta.")
+      return falhaDeRpc(error, "Não foi possível compartilhar a pasta.", {
+        TRL19: "Você não pode compartilhar esta pasta.",
+      })
     }
 
     revalidatePainel(`/painel/pastas/${pastaId}`)
@@ -93,10 +87,10 @@ export async function unshareFolder(
 ): Promise<ActionResult> {
   return withProfessorCall("unshareFolder", async (professor) => {
     if (!Number.isInteger(pastaId) || pastaId <= 0) {
-      return fail("Pasta inválida.")
+      return fail("Pasta inválida.", "validacao")
     }
     if (!Number.isInteger(professorId) || professorId <= 0) {
-      return fail("Professor inválido.")
+      return fail("Professor inválido.", "validacao")
     }
 
     const { error } = await professor.supabase.rpc("unshare_folder", {
@@ -104,7 +98,9 @@ export async function unshareFolder(
       p_professor_id: professorId,
     })
 
-    if (error) return fail("Não foi possível remover o acesso.")
+    if (error) {
+      return falhaDeRpc(error, "Não foi possível remover o acesso.")
+    }
 
     revalidatePainel(`/painel/pastas/${pastaId}`)
     return ok("Acesso removido.")

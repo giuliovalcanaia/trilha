@@ -6,19 +6,8 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { mensagemDoErro } from "@/lib/dominio/erros"
 import { createClient } from "@/lib/supabase/client"
-
-const errorMessages: Record<string, string> = {
-  invalid_activity_code:
-    "Código da atividade inválido. Confira com o professor.",
-  activity_not_published:
-    "Esta atividade ainda não está disponível. Confira com o professor.",
-  application_closed: "A atividade foi encerrada. Fale com o professor.",
-  student_already_in_another_class: "Você já entrou em outra atividade.",
-  teacher_cannot_join_as_student:
-    "Esta conta é de professor. Saia e entre com uma conta de aluno.",
-  name_required: "Informe o seu nome.",
-}
 
 export function StudentNameForm({ codigo }: { codigo: string }) {
   const router = useRouter()
@@ -61,7 +50,7 @@ export function StudentNameForm({ codigo }: { codigo: string }) {
     if (joinError) {
       setLoading(false)
       setError(
-        errorMessages[joinError.message] ??
+        mensagemDoErro(joinError.code) ??
           "Não foi possível entrar na atividade. Tente novamente."
       )
       return

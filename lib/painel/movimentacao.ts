@@ -1,5 +1,6 @@
 import type { ProfessorCtx } from "@/lib/actions/with-professor"
 import { fail, ok, type ActionResult } from "@/lib/actions/result"
+import { falhaDeRpc } from "@/lib/actions/rpc-error"
 import { revalidatePainel } from "@/lib/actions/revalidate"
 import type { SupabaseClient } from "@/lib/supabase/server"
 
@@ -81,10 +82,9 @@ export async function movePastaTo(
     .maybeSingle()
 
   if (error || !data) {
-    if (error?.message.includes("shared_folder_root")) {
-      return fail("A pasta compartilhada só pode ser movida pelo dono.")
-    }
-    return fail("Pasta não encontrada.")
+    return falhaDeRpc(error, "Pasta não encontrada.", {
+      TRL22: "A pasta compartilhada só pode ser movida pelo dono.",
+    })
   }
 
   revalidatePainel()
@@ -104,7 +104,7 @@ export async function moveAtividadeTo(
       .is("deleted_at", null)
       .maybeSingle()
 
-    if (!pasta) return fail("Pasta de destino inválida.")
+    if (!pasta) return fail("Pasta de destino inválida.", "validacao")
   }
 
   const { data, error } = await professor.supabase
@@ -115,7 +115,11 @@ export async function moveAtividadeTo(
     .select("id")
     .maybeSingle()
 
-  if (error || !data) return fail("Atividade não encontrada.")
+  if (error || !data) {
+    return falhaDeRpc(error, "Atividade não encontrada.", {
+      TRL19: "Pasta de destino inválida.",
+    })
+  }
 
   revalidatePainel()
   return ok("Atividade movida.")

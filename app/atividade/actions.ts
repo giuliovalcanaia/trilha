@@ -2,14 +2,18 @@
 
 import { revalidatePath } from "next/cache"
 
+import { fail, type ActionResult } from "@/lib/actions/result"
+import { falhaDeRpc } from "@/lib/actions/rpc-error"
+import { SESSAO_EXPIRADA } from "@/lib/actions/with-professor"
 import { getEstudante } from "@/lib/auth/estudante"
 
-export async function markLinkAsStarted(aplicacaoId: number, linkId: number) {
+export async function markLinkAsStarted(
+  aplicacaoId: number,
+  linkId: number
+): Promise<ActionResult> {
   const aluno = await getEstudante()
 
-  if (!aluno) {
-    return { error: "not_authenticated" as const }
-  }
+  if (!aluno) return fail(SESSAO_EXPIRADA, "sessao")
 
   const { error } = await aluno.supabase.rpc("update_my_progress", {
     p_aplicacao_id: aplicacaoId,
@@ -18,7 +22,7 @@ export async function markLinkAsStarted(aplicacaoId: number, linkId: number) {
   })
 
   if (error) {
-    return { error: error.message }
+    return falhaDeRpc(error, "Não foi possível iniciar o link.")
   }
 
   revalidatePath("/atividade")
@@ -30,12 +34,10 @@ export async function completeLink(
   linkId: number,
   senha: string,
   pontuacao: number | null
-) {
+): Promise<ActionResult> {
   const aluno = await getEstudante()
 
-  if (!aluno) {
-    return { error: "not_authenticated" as const }
-  }
+  if (!aluno) return fail(SESSAO_EXPIRADA, "sessao")
 
   const { error } = await aluno.supabase.rpc("complete_link", {
     p_aplicacao_id: aplicacaoId,
@@ -45,7 +47,7 @@ export async function completeLink(
   })
 
   if (error) {
-    return { error: error.message }
+    return falhaDeRpc(error, "Não foi possível concluir o link.")
   }
 
   revalidatePath("/atividade")

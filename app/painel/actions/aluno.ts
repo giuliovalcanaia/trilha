@@ -5,6 +5,7 @@ import { z } from "zod"
 import { requiredId } from "@/lib/dominio/campos"
 import { revalidatePainel } from "@/lib/actions/revalidate"
 import { fail, ok, type ActionResult } from "@/lib/actions/result"
+import { falhaDeRpc } from "@/lib/actions/rpc-error"
 import { withProfessorForm } from "@/lib/actions/with-professor"
 import { parseNota } from "@/lib/dominio/nota"
 import { STATUS_PROGRESSO } from "@/lib/dominio/status"
@@ -48,7 +49,9 @@ export async function updateStudentProgress(
         p_pontuacao: pontuacao,
       })
 
-      if (error) return fail("Não foi possível salvar o progresso.")
+      if (error) {
+        return falhaDeRpc(error, "Não foi possível salvar o progresso.")
+      }
 
       revalidatePainel(`/painel/atividades/${atividade_id}`)
       return ok("Progresso atualizado.")
@@ -70,11 +73,9 @@ export async function expelStudent(
       })
 
       if (error) {
-        return fail(
-          error.message === "participation_not_found"
-            ? "Este aluno não está mais nesta atividade."
-            : "Não foi possível expulsar o aluno."
-        )
+        return falhaDeRpc(error, "Não foi possível expulsar o aluno.", {
+          TRL27: "Este aluno não está mais nesta atividade.",
+        })
       }
 
       revalidatePainel(`/painel/atividades/${atividade_id}`)

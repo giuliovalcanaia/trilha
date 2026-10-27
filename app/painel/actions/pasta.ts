@@ -2,10 +2,12 @@
 
 import { revalidatePainel } from "@/lib/actions/revalidate"
 import { fail, ok, type ActionResult } from "@/lib/actions/result"
+import { falhaDeRpc } from "@/lib/actions/rpc-error"
 import {
   withProfessorCall,
   withProfessorForm,
 } from "@/lib/actions/with-professor"
+import { AppError } from "@/lib/dominio/erros"
 import {
   createPastaSchema,
   movePastaSchema,
@@ -46,7 +48,7 @@ export async function createPasta(
           .is("deleted_at", null)
           .maybeSingle()
 
-        if (!parent) return fail("Pasta de destino inválida.")
+        if (!parent) return fail("Pasta de destino inválida.", "validacao")
       }
 
       const { error } = await professor.supabase.from("pastas").insert({
@@ -55,7 +57,9 @@ export async function createPasta(
         professor_id: professor.professorId,
       })
 
-      if (error) return fail("Não foi possível criar a pasta.")
+      if (error) {
+        return falhaDeRpc(error, "Não foi possível criar a pasta.")
+      }
 
       revalidatePainel()
       return ok("Pasta criada.")
@@ -80,7 +84,9 @@ export async function renamePasta(
         .select("id")
         .maybeSingle()
 
-      if (error || !data) return fail("Não foi possível renomear a pasta.")
+      if (error || !data) {
+        return falhaDeRpc(error, "Não foi possível renomear a pasta.")
+      }
 
       revalidatePainel()
       return ok("Pasta renomeada.")
@@ -115,12 +121,14 @@ export async function trashPasta(
       })
 
       if (error || !data) {
-        if (error?.message.includes("shared_folder_root")) {
-          return fail(
-            "A pasta compartilhada só pode ser movida para a lixeira pelo dono."
-          )
-        }
-        return fail("Não foi possível mover a pasta para a lixeira.")
+        return falhaDeRpc(
+          error,
+          "Não foi possível mover a pasta para a lixeira.",
+          {
+            TRL22:
+              "A pasta compartilhada só pode ser movida para a lixeira pelo dono.",
+          }
+        )
       }
 
       revalidatePainel()
@@ -149,12 +157,14 @@ export async function trashSelecionados(
       })
 
       if (error || !data) {
-        if (error?.message.includes("shared_folder_root")) {
-          return fail(
-            "A pasta compartilhada só pode ser movida para a lixeira pelo dono."
-          )
-        }
-        return fail("Não foi possível mover os itens para a lixeira.")
+        return falhaDeRpc(
+          error,
+          "Não foi possível mover os itens para a lixeira.",
+          {
+            TRL22:
+              "A pasta compartilhada só pode ser movida para a lixeira pelo dono.",
+          }
+        )
       }
 
       revalidatePainel()
@@ -171,14 +181,16 @@ export async function trashSelecionados(
 export async function duplicatePasta(pastaId: number): Promise<ActionResult> {
   return withProfessorCall("duplicatePasta", async (professor) => {
     if (!Number.isInteger(pastaId) || pastaId <= 0) {
-      return fail("Pasta inválida.")
+      throw new AppError("TRL19", "Pasta inválida.")
     }
 
     const { data, error } = await professor.supabase.rpc("duplicate_pasta", {
       p_pasta_id: pastaId,
     })
 
-    if (error || !data) return fail("Não foi possível duplicar a pasta.")
+    if (error || !data) {
+      return falhaDeRpc(error, "Não foi possível duplicar a pasta.")
+    }
 
     revalidatePainel()
     return ok("Pasta duplicada.")
@@ -191,7 +203,9 @@ export async function moveItem(
   pastaDestinoId: number | null
 ): Promise<ActionResult> {
   return withProfessorCall("moveItem", async (professor) => {
-    if (!Number.isInteger(id) || id <= 0) return fail("Item inválido.")
+    if (!Number.isInteger(id) || id <= 0) {
+      return fail("Item inválido.", "validacao")
+    }
 
     if (tipo === "pasta") {
       return movePastaTo(professor, id, pastaDestinoId)

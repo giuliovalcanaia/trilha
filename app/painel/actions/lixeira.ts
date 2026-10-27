@@ -4,6 +4,7 @@ import { z } from "zod"
 
 import { revalidatePainel } from "@/lib/actions/revalidate"
 import { fail, ok, type ActionResult } from "@/lib/actions/result"
+import { falhaDeRpc } from "@/lib/actions/rpc-error"
 import {
   withProfessorCall,
   withProfessorForm,
@@ -28,7 +29,9 @@ export async function restoreTrash(
         p_trash_id: trash_id,
       })
 
-      if (error) return fail("Não foi possível restaurar o item.")
+      if (error) {
+        return falhaDeRpc(error, "Não foi possível restaurar o item.")
+      }
 
       revalidatePainel()
       return ok("Item restaurado.")
@@ -38,13 +41,15 @@ export async function restoreTrash(
 
 export async function undoTrash(trashId: string): Promise<ActionResult> {
   return withProfessorCall("undoTrash", async (professor) => {
-    if (!trashId) return fail("Item da lixeira inválido.")
+    if (!trashId) return fail("Item da lixeira inválido.", "validacao")
 
     const { error } = await professor.supabase.rpc("restore_trash", {
       p_trash_id: trashId,
     })
 
-    if (error) return fail("Não foi possível restaurar o item.")
+    if (error) {
+      return falhaDeRpc(error, "Não foi possível restaurar o item.")
+    }
 
     revalidatePainel()
     return ok("Item restaurado.")
@@ -65,10 +70,13 @@ export async function purgeTrash(
       })
 
       if (error) {
-        if (error.message.includes("shared_folder_root")) {
-          return fail("A pasta compartilhada só pode ser excluída pelo dono.")
-        }
-        return fail("Não foi possível excluir o item definitivamente.")
+        return falhaDeRpc(
+          error,
+          "Não foi possível excluir o item definitivamente.",
+          {
+            TRL22: "A pasta compartilhada só pode ser excluída pelo dono.",
+          }
+        )
       }
 
       revalidatePainel()
@@ -88,7 +96,9 @@ export async function emptyTrash(
     async (professor) => {
       const { error } = await professor.supabase.rpc("empty_trash")
 
-      if (error) return fail("Não foi possível esvaziar a lixeira.")
+      if (error) {
+        return falhaDeRpc(error, "Não foi possível esvaziar a lixeira.")
+      }
 
       revalidatePainel()
       return ok("Itens de sua propriedade removidos da lixeira.")

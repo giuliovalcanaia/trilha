@@ -17,18 +17,6 @@ import { toast } from "@/components/ui/toast"
 import { parseNota } from "@/lib/dominio/nota"
 import { cn } from "@/lib/utils"
 
-const errorMessages: Record<string, string> = {
-  invalid_password: "Senha incorreta. Confira com o professor.",
-  invalid_score: "A nota precisa ser maior ou igual a 0.",
-  link_locked: "Este link não está disponível para conclusão.",
-  password_not_set: "O professor ainda não definiu a senha desta atividade.",
-  application_closed: "Esta turma foi encerrada pelo professor.",
-  not_in_application: "Você não está nesta turma. Entre novamente.",
-  not_a_student: "Sessão expirada. Entre novamente.",
-  not_authenticated: "Sessão expirada. Entre novamente.",
-  password_required: "Digite a senha.",
-}
-
 const LOCKOUT_SECONDS = 3
 
 /**
@@ -147,9 +135,9 @@ export function InlinePasswordForm({
       const result = await completeLink(aplicacaoId, linkId, value, pontuacao)
 
       if (result.error) {
-        setErro(errorMessages[result.error] ?? "Não foi possível concluir.")
+        setErro(result.error)
 
-        if (result.error === "invalid_password") {
+        if (result.code === "TRL16") {
           setBloqueio(LOCKOUT_SECONDS)
         }
 

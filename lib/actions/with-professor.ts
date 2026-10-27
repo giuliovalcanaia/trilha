@@ -4,6 +4,7 @@ import { z, type ZodType } from "zod"
 import { formDataToObject } from "@/lib/actions/form-data"
 import { fail, type ActionResult } from "@/lib/actions/result"
 import { getProfessor } from "@/lib/auth/professor"
+import { AppError } from "@/lib/dominio/erros"
 import type { SupabaseClient } from "@/lib/supabase/server"
 
 export type ProfessorCtx = {
@@ -24,8 +25,8 @@ async function getProfessorCtx(): Promise<ProfessorCtx | null> {
 }
 
 /** Loga só o contexto seguro: nunca o FormData (senha, nota, nomes). */
-function logActionError(name: string, error: unknown, professorId: number) {
-  console.error(`[action:${name}]`, { professorId }, error)
+function logActionError(name: string, professorId: number, codigo: string) {
+  console.error(`[action:${name}]`, { professorId, codigo })
 }
 
 async function executar(
@@ -39,8 +40,13 @@ async function executar(
     // `redirect()`/`notFound()` usam exceções internas do Next: precisam
     // continuar subindo em vez de virarem "erro inesperado".
     unstable_rethrow(error)
-    logActionError(name, error, professor.professorId)
-    return fail(ERRO_INESPERADO)
+
+    if (error instanceof AppError) {
+      return fail(error.message, error.codigo)
+    }
+
+    logActionError(name, professor.professorId, "inesperado")
+    return fail(ERRO_INESPERADO, "inesperado")
   }
 }
 
@@ -59,12 +65,15 @@ export async function withProfessorForm<Schema extends ZodType>(
 ): Promise<ActionResult> {
   const professor = await getProfessorCtx()
 
-  if (!professor) return fail(SESSAO_EXPIRADA)
+  if (!professor) return fail(SESSAO_EXPIRADA, "sessao")
 
   const parsed = schema.safeParse(formDataToObject(formData))
 
   if (!parsed.success) {
-    return fail(parsed.error.issues[0]?.message ?? "Dados inválidos.")
+    return fail(
+      parsed.error.issues[0]?.message ?? "Dados inválidos.",
+      "validacao"
+    )
   }
 
   return executar(name, professor, () => handler(professor, parsed.data))
@@ -80,7 +89,7 @@ export async function withProfessorCall(
 ): Promise<ActionResult> {
   const professor = await getProfessorCtx()
 
-  if (!professor) return fail(SESSAO_EXPIRADA)
+  if (!professor) return fail(SESSAO_EXPIRADA, "sessao")
 
   return executar(name, professor, () => handler(professor))
 }

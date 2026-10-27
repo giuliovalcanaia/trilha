@@ -6,6 +6,7 @@ import { redirect } from "next/navigation"
 
 import { revalidatePainel } from "@/lib/actions/revalidate"
 import { fail, ok, type ActionResult } from "@/lib/actions/result"
+import { falhaDeRpc } from "@/lib/actions/rpc-error"
 import {
   withProfessorCall,
   withProfessorForm,
@@ -20,6 +21,7 @@ import {
   updateActivityPasswordSchema,
   updateAtividadeSchema,
 } from "@/lib/dominio/atividade"
+import { AppError } from "@/lib/dominio/erros"
 import { parseLinkList } from "@/lib/dominio/links"
 import { hoje } from "@/lib/format"
 import { aplicarLinks } from "@/lib/painel/aplicar-links"
@@ -53,7 +55,7 @@ async function aplicarAtividadeAtiva(
   ativa: boolean
 ): Promise<ActionResult> {
   if (!Number.isInteger(atividadeId) || atividadeId <= 0) {
-    return fail("Atividade inválida.")
+    throw new AppError("TRL20", "Atividade inválida.")
   }
 
   const { error } = await professor.supabase.rpc("set_atividade_ativa", {
@@ -62,7 +64,8 @@ async function aplicarAtividadeAtiva(
   })
 
   if (error) {
-    return fail(
+    return falhaDeRpc(
+      error,
       ativa
         ? "Não foi possível reabrir a atividade."
         : "Não foi possível encerrar a atividade."
@@ -87,7 +90,7 @@ export async function createAtividade(
     ) => {
       const lista = parseLinkList(links_texto)
 
-      if (!lista.ok) return fail(lista.error)
+      if (!lista.ok) return fail(lista.error, "validacao")
 
       if (pasta_id !== null) {
         const { data: pasta } = await professor.supabase
@@ -97,7 +100,7 @@ export async function createAtividade(
           .is("deleted_at", null)
           .maybeSingle()
 
-        if (!pasta) return fail("Pasta de destino inválida.")
+        if (!pasta) return fail("Pasta de destino inválida.", "validacao")
       }
 
       const { data: atividade, error } = await professor.supabase
@@ -113,7 +116,7 @@ export async function createAtividade(
         .single()
 
       if (error || !atividade) {
-        return fail("Não foi possível criar a atividade.")
+        return falhaDeRpc(error, "Não foi possível criar a atividade.")
       }
 
       const { error: senhaError } = await professor.supabase.rpc(
@@ -126,7 +129,10 @@ export async function createAtividade(
           .from("atividades")
           .delete()
           .eq("id", atividade.id)
-        return fail("Não foi possível definir a senha da atividade.")
+        return falhaDeRpc(
+          senhaError,
+          "Não foi possível definir a senha da atividade."
+        )
       }
 
       if (lista.links.length > 0) {
@@ -142,7 +148,7 @@ export async function createAtividade(
             .from("atividades")
             .delete()
             .eq("id", atividade.id)
-          return fail(erroLinks)
+          return fail(erroLinks, "inesperado")
         }
       }
 
@@ -153,7 +159,7 @@ export async function createAtividade(
           .from("atividades")
           .delete()
           .eq("id", atividade.id)
-        return fail("Não foi possível gerar o código de entrada.")
+        return fail("Não foi possível gerar o código de entrada.", "inesperado")
       }
 
       const { error: entradaError } = await professor.supabase
@@ -170,7 +176,10 @@ export async function createAtividade(
           .from("atividades")
           .delete()
           .eq("id", atividade.id)
-        return fail("Não foi possível criar o código de entrada.")
+        return falhaDeRpc(
+          entradaError,
+          "Não foi possível criar o código de entrada."
+        )
       }
 
       // A atividade já nasce ativa: publicada e com a entrada aberta.
@@ -184,7 +193,10 @@ export async function createAtividade(
           .from("atividades")
           .delete()
           .eq("id", atividade.id)
-        return fail("Não foi possível publicar a atividade.")
+        return falhaDeRpc(
+          publicacaoError,
+          "Não foi possível publicar a atividade."
+        )
       }
 
       revalidatePainel()
@@ -210,7 +222,7 @@ export async function updateAtividade(
       if (subtitulo !== undefined) dados.subtitulo = subtitulo.trim() || null
 
       if (dados.titulo === undefined && dados.subtitulo === undefined) {
-        return fail("Nada para salvar.")
+        return fail("Nada para salvar.", "validacao")
       }
 
       const { data, error } = await professor.supabase
@@ -221,7 +233,9 @@ export async function updateAtividade(
         .select("id")
         .maybeSingle()
 
-      if (error || !data) return fail("Não foi possível salvar a atividade.")
+      if (error || !data) {
+        return falhaDeRpc(error, "Não foi possível salvar a atividade.")
+      }
 
       revalidatePainel(`/painel/atividades/${id}`)
       return { error: null }
@@ -242,7 +256,9 @@ export async function updateActivityShuffle(
       .select("id")
       .maybeSingle()
 
-    if (error || !data) return fail("Não foi possível salvar a opção.")
+    if (error || !data) {
+      return falhaDeRpc(error, "Não foi possível salvar a opção.")
+    }
 
     revalidatePainel(`/painel/atividades/${atividadeId}`)
     return { error: null }
@@ -266,7 +282,9 @@ export async function renameAtividade(
         .select("id")
         .maybeSingle()
 
-      if (error || !data) return fail("Não foi possível renomear a atividade.")
+      if (error || !data) {
+        return falhaDeRpc(error, "Não foi possível renomear a atividade.")
+      }
 
       revalidatePainel(`/painel/atividades/${id}`)
       return ok("Atividade renomeada.")
@@ -301,7 +319,9 @@ export async function updateActivityPassword(
         p_senha: senha,
       })
 
-      if (error) return fail("Não foi possível atualizar a senha.")
+      if (error) {
+        return falhaDeRpc(error, "Não foi possível atualizar a senha.")
+      }
 
       revalidatePainel(`/painel/atividades/${atividade_id}`)
       return ok("Senha atualizada.")
@@ -345,7 +365,10 @@ export async function trashAtividade(
       })
 
       if (error || !data) {
-        return fail("Não foi possível mover a atividade para a lixeira.")
+        return falhaDeRpc(
+          error,
+          "Não foi possível mover a atividade para a lixeira."
+        )
       }
 
       revalidatePainel(`/painel/atividades/${id}`)
@@ -359,7 +382,7 @@ export async function duplicateAtividade(
 ): Promise<ActionResult> {
   return withProfessorCall("duplicateAtividade", async (professor) => {
     if (!Number.isInteger(atividadeId) || atividadeId <= 0) {
-      return fail("Atividade inválida.")
+      throw new AppError("TRL20", "Atividade inválida.")
     }
 
     const { data, error } = await professor.supabase.rpc(
@@ -367,7 +390,9 @@ export async function duplicateAtividade(
       { p_atividade_id: atividadeId }
     )
 
-    if (error || !data) return fail("Não foi possível duplicar a atividade.")
+    if (error || !data) {
+      return falhaDeRpc(error, "Não foi possível duplicar a atividade.")
+    }
 
     revalidatePainel()
     return ok("Atividade duplicada.")
