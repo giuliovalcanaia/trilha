@@ -1,4 +1,5 @@
 import { Textarea } from "@/components/ui/textarea"
+import { LINKS_TEXTO_MAX } from "@/lib/dominio/limites"
 
 type LinksTextareaProps = {
   id?: string
@@ -32,6 +33,7 @@ export function LinksTextarea({
       defaultValue={value === undefined ? defaultValue : undefined}
       onChange={onChange ? (event) => onChange(event.target.value) : undefined}
       disabled={disabled}
+      maxLength={LINKS_TEXTO_MAX}
       rows={10}
       autoFocus={autoFocus}
       spellCheck={false}

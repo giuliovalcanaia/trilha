@@ -32,6 +32,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { TabsContent } from "@/components/ui/tabs"
+import { ROTULOS_ATIVIDADE } from "@/lib/dominio/status"
 import { formatarData, formatarDataHora } from "@/lib/format"
 import { createClient } from "@/lib/supabase/server"
 
@@ -205,7 +206,9 @@ export default async function Page({
                                 : "Código de entrada"}
                             </CardTitle>
                             <Badge variant={ativa ? "default" : "secondary"}>
-                              {ativa ? "Ativa" : "Encerrada"}
+                              {ativa
+                                ? ROTULOS_ATIVIDADE.publicada
+                                : ROTULOS_ATIVIDADE.rascunho}
                             </Badge>
                             {ativa && (
                               <Badge variant="outline">

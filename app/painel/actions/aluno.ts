@@ -2,19 +2,18 @@
 
 import { z } from "zod"
 
-import { requiredId } from "@/lib/actions/form-data"
+import { requiredId } from "@/lib/dominio/campos"
 import { revalidatePainel } from "@/lib/actions/revalidate"
 import { fail, ok, type ActionResult } from "@/lib/actions/result"
 import { withProfessorForm } from "@/lib/actions/with-professor"
 import { parseNota } from "@/lib/dominio/nota"
+import { STATUS_PROGRESSO } from "@/lib/dominio/status"
 
 const updateStudentProgressSchema = z.object({
   atividade_id: requiredId("Progresso inválido."),
   participacao_id: requiredId("Progresso inválido."),
   link_id: requiredId("Progresso inválido."),
-  status: z.enum(["aberta", "fazendo", "concluida", "bloqueada"], {
-    message: "Situação inválida.",
-  }),
+  status: z.enum(STATUS_PROGRESSO, { message: "Situação inválida." }),
   pontuacao: z.string().optional().default(""),
 })
 

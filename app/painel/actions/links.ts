@@ -2,16 +2,17 @@
 
 import { z } from "zod"
 
-import { requiredId } from "@/lib/actions/form-data"
+import { requiredId } from "@/lib/dominio/campos"
 import { revalidatePainel } from "@/lib/actions/revalidate"
 import { fail, ok, type ActionResult } from "@/lib/actions/result"
 import { withProfessorForm } from "@/lib/actions/with-professor"
+import { linksTexto } from "@/lib/dominio/link"
 import { parseLinkList } from "@/lib/dominio/links"
 import { aplicarLinks } from "@/lib/painel/aplicar-links"
 
 const updateLinksSchema = z.object({
   atividade_id: requiredId("Atividade inválida."),
-  links_texto: z.string(),
+  links_texto: linksTexto,
 })
 
 export async function updateLinks(

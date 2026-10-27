@@ -1,41 +1,20 @@
 "use server"
 
-import { z } from "zod"
-
-import { optionalId, requiredId } from "@/lib/actions/form-data"
 import { revalidatePainel } from "@/lib/actions/revalidate"
 import { fail, ok, type ActionResult } from "@/lib/actions/result"
 import {
   withProfessorCall,
   withProfessorForm,
 } from "@/lib/actions/with-professor"
+import {
+  createPastaSchema,
+  movePastaSchema,
+  renamePastaSchema,
+  trashPastaSchema,
+  trashSelecionadosSchema,
+} from "@/lib/dominio/pasta"
 import { separarChaves } from "@/lib/dominio/selecao"
 import { moveAtividadeTo, movePastaTo } from "@/lib/painel/movimentacao"
-
-const nomeSchema = z.string().trim().min(1, "Informe o nome da pasta.")
-
-const createPastaSchema = z.object({
-  nome: nomeSchema,
-  parent_id: optionalId,
-})
-
-const renamePastaSchema = z.object({
-  id: requiredId("Pasta inválida."),
-  nome: nomeSchema,
-})
-
-const movePastaSchema = z.object({
-  id: requiredId("Pasta inválida."),
-  parent_id: optionalId,
-})
-
-const trashPastaSchema = z.object({
-  id: requiredId("Pasta inválida."),
-})
-
-const trashSelecionadosSchema = z.object({
-  itens: z.string().optional().default(""),
-})
 
 function parseChaves(raw: string): string[] {
   if (!raw) return []

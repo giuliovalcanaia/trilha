@@ -41,13 +41,8 @@ import {
   isPasta,
   type ExplorerItem,
 } from "@/components/painel/explorer/explorer-types"
+import { rotuloAtividade } from "@/lib/dominio/status"
 import { cn } from "@/lib/utils"
-
-const statusLabels: Record<string, string> = {
-  rascunho: "Encerrada",
-  publicada: "Ativa",
-  arquivada: "Arquivada",
-}
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "short",
@@ -353,7 +348,7 @@ export function ExplorerItemView({
                 variant={publicada ? "default" : "secondary"}
                 className="hidden shrink-0 sm:inline-flex"
               >
-                {statusLabels[item.status] ?? item.status}
+                {rotuloAtividade(item.status)}
               </Badge>
             )}
             <span
@@ -388,7 +383,7 @@ export function ExplorerItemView({
                 variant={publicada ? "default" : "secondary"}
                 className="w-fit"
               >
-                {statusLabels[item.status] ?? item.status}
+                {rotuloAtividade(item.status)}
               </Badge>
             )}
           </>

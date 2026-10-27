@@ -3,22 +3,14 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeftIcon, EyeIcon, ShuffleIcon } from "lucide-react"
 
-import {
-  ClickableCard,
-  type ActivityStatus,
-} from "@/components/aluno/clickable-card"
+import { ClickableCard } from "@/components/aluno/clickable-card"
 import { StudentActivityHeader } from "@/components/aluno/student-activity-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader } from "@/components/ui/card"
 import { requireProfessor } from "@/lib/auth/professor"
+import { rotuloAtividade, type StatusProgresso } from "@/lib/dominio/status"
 import { formatarData } from "@/lib/format"
-
-const statusLabels: Record<string, string> = {
-  rascunho: "Encerrada",
-  publicada: "Ativa",
-  arquivada: "Arquivada",
-}
 
 export const metadata: Metadata = {
   title: "Pré-visualização da atividade",
@@ -67,7 +59,7 @@ export default async function Page({
     id: link.id,
     titulo: link.titulo,
     href: link.href,
-    status: (index === 0 ? "aberta" : "bloqueada") as ActivityStatus,
+    status: (index === 0 ? "aberta" : "bloqueada") as StatusProgresso,
   }))
 
   const publicada = atividade.status === "publicada"
@@ -80,7 +72,7 @@ export default async function Page({
             <EyeIcon className="size-4 text-muted-foreground" />
             <span className="font-medium">Pré-visualização</span>
             <Badge variant={publicada ? "default" : "secondary"}>
-              {statusLabels[atividade.status] ?? atividade.status}
+              {rotuloAtividade(atividade.status)}
             </Badge>
             {atividade.embaralhar_links && (
               <Badge variant="outline">

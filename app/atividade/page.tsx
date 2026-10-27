@@ -3,21 +3,10 @@ import { redirect } from "next/navigation"
 import { StudentActivityHeader } from "@/components/aluno/student-activity-header"
 import { StudentActivityRealtime } from "@/components/aluno/student-activity-realtime"
 import { StudentLinkList } from "@/components/aluno/student-link-list"
-import type { ActivityStatus } from "@/components/aluno/clickable-card"
 import { Card, CardDescription, CardHeader } from "@/components/ui/card"
 import { getEstudante, getParticipacaoDoAluno } from "@/lib/auth/estudante"
 import { formatarData } from "@/lib/format"
-
-const statuses: ActivityStatus[] = [
-  "aberta",
-  "fazendo",
-  "concluida",
-  "bloqueada",
-]
-
-function toStatus(value: string): ActivityStatus {
-  return statuses.find((status) => status === value) ?? "bloqueada"
-}
+import { statusProgresso } from "@/lib/dominio/status"
 
 export default async function Page({
   searchParams,
@@ -128,7 +117,7 @@ export default async function Page({
   ])
 
   const statusByLink = new Map(
-    (progresso ?? []).map((row) => [row.link_id, toStatus(row.status)])
+    (progresso ?? []).map((row) => [row.link_id, statusProgresso(row.status)])
   )
 
   // Quando o professor ativou o embaralhamento, a sequência do aluno vive em

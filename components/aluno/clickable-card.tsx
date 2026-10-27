@@ -11,7 +11,9 @@ import {
   LucideRotateCcw,
 } from "lucide-react"
 
-export type ActivityStatus = "aberta" | "fazendo" | "concluida" | "bloqueada"
+import type { StatusProgresso } from "@/lib/dominio/status"
+
+export type ActivityStatus = StatusProgresso
 
 interface ClickableCardProps {
   href: string

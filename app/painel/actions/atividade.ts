@@ -3,9 +3,7 @@
 import { randomInt } from "node:crypto"
 
 import { redirect } from "next/navigation"
-import { z } from "zod"
 
-import { optionalId, requiredId } from "@/lib/actions/form-data"
 import { revalidatePainel } from "@/lib/actions/revalidate"
 import { fail, ok, type ActionResult } from "@/lib/actions/result"
 import {
@@ -13,6 +11,15 @@ import {
   withProfessorForm,
   type ProfessorCtx,
 } from "@/lib/actions/with-professor"
+import {
+  alternarAtividadeSchema,
+  createAtividadeSchema,
+  moveAtividadeSchema,
+  renameAtividadeSchema,
+  trashAtividadeSchema,
+  updateActivityPasswordSchema,
+  updateAtividadeSchema,
+} from "@/lib/dominio/atividade"
 import { parseLinkList } from "@/lib/dominio/links"
 import { hoje } from "@/lib/format"
 import { aplicarLinks } from "@/lib/painel/aplicar-links"
@@ -20,61 +27,6 @@ import { moveAtividadeTo } from "@/lib/painel/movimentacao"
 import type { SupabaseClient } from "@/lib/supabase/server"
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-
-const senhaSchema = z
-  .string()
-  .trim()
-  .min(4, "A senha precisa ter pelo menos 4 caracteres.")
-
-const tituloSchema = z.string().trim().min(1, "Informe o título da atividade.")
-
-const createAtividadeSchema = z.object({
-  titulo: tituloSchema,
-  subtitulo: z
-    .string()
-    .optional()
-    .transform((value) => value?.trim() || null),
-  pasta_id: optionalId,
-  senha: senhaSchema,
-  embaralhar_links: z
-    .string()
-    .optional()
-    .transform((value) => value === "true"),
-  links_texto: z.string().optional().default(""),
-})
-
-const updateAtividadeSchema = z.object({
-  id: requiredId("Atividade inválida."),
-  titulo: tituloSchema.optional(),
-  subtitulo: z.string().optional(),
-})
-
-const renameAtividadeSchema = z.object({
-  id: requiredId("Atividade inválida."),
-  titulo: tituloSchema,
-})
-
-const moveAtividadeSchema = z.object({
-  id: requiredId("Atividade inválida."),
-  pasta_id: optionalId,
-})
-
-const updateActivityPasswordSchema = z.object({
-  atividade_id: requiredId("Atividade inválida."),
-  senha: senhaSchema,
-})
-
-const alternarAtividadeSchema = z.object({
-  id: requiredId("Atividade inválida."),
-  ativa: z
-    .string()
-    .optional()
-    .transform((value) => value === "1"),
-})
-
-const trashAtividadeSchema = z.object({
-  id: requiredId("Atividade inválida."),
-})
 
 async function generateCode(supabase: SupabaseClient) {
   for (let attempt = 0; attempt < 10; attempt++) {

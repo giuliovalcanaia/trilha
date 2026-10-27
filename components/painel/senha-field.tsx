@@ -10,6 +10,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group"
+import { SENHA_MAX, SENHA_MIN } from "@/lib/dominio/limites"
 import { cn } from "@/lib/utils"
 
 /**
@@ -119,7 +120,8 @@ export function SenhaField({
           type="text"
           value={senha}
           onChange={(event) => setSenha(event.target.value)}
-          minLength={4}
+          minLength={SENHA_MIN}
+          maxLength={SENHA_MAX}
           placeholder="Mínimo de 4 caracteres"
           autoComplete="off"
           spellCheck={false}

@@ -10,15 +10,15 @@ import { Label } from "@/components/ui/label"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { toast } from "@/components/ui/toast"
 import { formatarNota, parseNota } from "@/lib/dominio/nota"
+import {
+  ROTULOS_PROGRESSO,
+  statusProgresso,
+  type StatusProgresso,
+} from "@/lib/dominio/status"
 
-type Status = "aberta" | "fazendo" | "concluida" | "bloqueada"
+type Status = StatusProgresso
 
-const statusLabels: Record<Status, string> = {
-  aberta: "Aberta",
-  fazendo: "Em andamento",
-  concluida: "Concluída",
-  bloqueada: "Bloqueada",
-}
+const statusLabels = ROTULOS_PROGRESSO
 
 type ProgressoAlunoFormProps = {
   atividadeId: number
@@ -46,8 +46,7 @@ export function ProgressoAlunoForm({
   pontuacao,
 }: ProgressoAlunoFormProps) {
   const router = useRouter()
-  const statusRecebido: Status =
-    status in statusLabels ? (status as Status) : "bloqueada"
+  const statusRecebido = statusProgresso(status)
   const [statusLocal, setStatusLocal] = useState<Status>(statusRecebido)
   const [nota, setNota] = useState(formatarNota(pontuacao))
   const [statusServidor, setStatusServidor] = useState(statusRecebido)
@@ -173,10 +172,18 @@ export function ProgressoAlunoForm({
           size="sm"
           className="w-full"
         >
-          <NativeSelectOption value="bloqueada">Bloqueada</NativeSelectOption>
-          <NativeSelectOption value="aberta">Aberta</NativeSelectOption>
-          <NativeSelectOption value="fazendo">Em andamento</NativeSelectOption>
-          <NativeSelectOption value="concluida">Concluída</NativeSelectOption>
+          <NativeSelectOption value="bloqueada">
+            {ROTULOS_PROGRESSO.bloqueada}
+          </NativeSelectOption>
+          <NativeSelectOption value="aberta">
+            {ROTULOS_PROGRESSO.aberta}
+          </NativeSelectOption>
+          <NativeSelectOption value="fazendo">
+            {ROTULOS_PROGRESSO.fazendo}
+          </NativeSelectOption>
+          <NativeSelectOption value="concluida">
+            {ROTULOS_PROGRESSO.concluida}
+          </NativeSelectOption>
         </NativeSelect>
       </div>
 
