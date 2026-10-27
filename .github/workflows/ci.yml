@@ -15,7 +15,7 @@ env:
 jobs:
   app:
     name: App (formatação, lint, tipos, testes, build)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       # O build só valida o formato das variáveis (`lib/env.ts`); nenhuma página
@@ -43,7 +43,7 @@ jobs:
 
   db:
     name: Banco (pgTAP e lint de schema)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
@@ -64,7 +64,7 @@ jobs:
     name: E2E (fluxo principal)
     # Um teste caro: roda em PR e nos pushes para a produção.
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
