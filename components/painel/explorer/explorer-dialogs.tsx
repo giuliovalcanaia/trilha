@@ -7,19 +7,21 @@ import { useRouter } from "next/navigation"
 
 import {
   moveAtividade,
-  movePasta,
   renameAtividade,
-  renamePasta,
   trashAtividade,
+} from "@/app/painel/actions/atividade"
+import { undoTrash } from "@/app/painel/actions/lixeira"
+import {
+  createPasta,
+  movePasta,
+  renamePasta,
   trashPasta,
   trashSelecionados,
-  undoTrash,
-  createPasta,
-  type ActionResult,
-} from "@/app/painel/actions"
+} from "@/app/painel/actions/pasta"
 import { useSelecao } from "@/components/painel/selecao-context"
 import { ActionForm } from "@/components/painel/action-form"
 import { SubmitButton } from "@/components/painel/submit-button"
+import type { ActionResult } from "@/lib/actions/result"
 import {
   AlertDialog,
   AlertDialogCancel,

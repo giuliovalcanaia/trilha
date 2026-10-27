@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 
-import type { ActionResult } from "@/app/painel/actions"
+import type { ActionResult } from "@/lib/actions/result"
 import { ActionForm } from "@/components/painel/action-form"
 import { AtividadeCabecalho } from "@/components/painel/atividade-cabecalho"
 import { AtividadeTabsList } from "@/components/painel/atividade-tabs-list"

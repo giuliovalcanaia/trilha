@@ -2,7 +2,7 @@
 
 import { UserXIcon } from "lucide-react"
 
-import { expelStudent } from "@/app/painel/actions"
+import { expelStudent } from "@/app/painel/actions/aluno"
 import { ConfirmAction } from "@/components/painel/confirm-action"
 import { Button } from "@/components/ui/button"
 

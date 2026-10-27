@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useFormStatus } from "react-dom"
 
-import { updateLinks } from "@/app/painel/actions"
+import { updateLinks } from "@/app/painel/actions/links"
 import { ActionForm } from "@/components/painel/action-form"
 import { useLinksDraft } from "@/components/painel/links-draft"
 import { SubmitButton } from "@/components/painel/submit-button"

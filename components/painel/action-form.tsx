@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef } from "react"
 
-import type { ActionResult } from "@/app/painel/actions"
+import type { ActionResult } from "@/lib/actions/result"
 import { toast } from "@/components/ui/toast"
 
 type ActionFormProps = {

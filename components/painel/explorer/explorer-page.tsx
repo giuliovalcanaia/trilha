@@ -14,11 +14,9 @@ import { useRouter } from "next/navigation"
 
 import {
   duplicateAtividade,
-  duplicatePasta,
-  moveItem,
   setAtividadeAtiva,
-  type ActionResult,
-} from "@/app/painel/actions"
+} from "@/app/painel/actions/atividade"
+import { duplicatePasta, moveItem } from "@/app/painel/actions/pasta"
 import {
   ContextMenu,
   ContextMenuContent,
@@ -55,6 +53,7 @@ import {
   type OrdemExplorer,
 } from "@/components/painel/explorer/explorer-types"
 import { toast } from "@/components/ui/toast"
+import type { ActionResult } from "@/lib/actions/result"
 import { pastaBreadcrumb, pastaDescendantIds } from "@/lib/dominio/pastas"
 import { itemKey } from "@/lib/dominio/selecao"
 import type { ExplorerData } from "@/lib/painel/explorer-data"

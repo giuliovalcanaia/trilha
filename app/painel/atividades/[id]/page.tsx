@@ -4,7 +4,7 @@ import {
   alternarAtividade,
   updateActivityPassword,
   updateAtividade,
-} from "@/app/painel/actions"
+} from "@/app/painel/actions/atividade"
 import { ActionForm } from "@/components/painel/action-form"
 import { AtividadeCabecalho } from "@/components/painel/atividade-cabecalho"
 import { AtividadeTabsList } from "@/components/painel/atividade-tabs-list"

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 
-import { updateStudentProgress } from "@/app/painel/actions"
+import { updateStudentProgress } from "@/app/painel/actions/aluno"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"

@@ -1,4 +1,4 @@
-import { createAtividade } from "@/app/painel/actions"
+import { createAtividade } from "@/app/painel/actions/atividade"
 import { NovaAtividadeForm } from "@/components/painel/nova-atividade-form"
 import { createClient } from "@/lib/supabase/server"
 

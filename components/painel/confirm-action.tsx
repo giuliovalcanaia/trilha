@@ -3,7 +3,7 @@
 import { useState, type ReactElement } from "react"
 import { Trash2Icon } from "lucide-react"
 
-import type { ActionResult } from "@/app/painel/actions"
+import type { ActionResult } from "@/lib/actions/result"
 import { ActionForm } from "@/components/painel/action-form"
 import { SubmitButton } from "@/components/painel/submit-button"
 import {

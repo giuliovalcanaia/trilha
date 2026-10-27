@@ -33,3 +33,5 @@ export const createClient = cache(async () => {
     }
   )
 })
+
+export type SupabaseClient = Awaited<ReturnType<typeof createClient>>

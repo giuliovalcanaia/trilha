@@ -7,7 +7,7 @@ import {
   getFolderShare,
   shareFolder,
   unshareFolder,
-} from "@/app/painel/actions"
+} from "@/app/painel/actions/compartilhamento"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,

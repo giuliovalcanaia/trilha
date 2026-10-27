@@ -2,7 +2,11 @@
 
 import { FileTextIcon, FolderIcon, Trash2Icon, Undo2Icon } from "lucide-react"
 
-import { emptyTrash, purgeTrash, restoreTrash } from "@/app/painel/actions"
+import {
+  emptyTrash,
+  purgeTrash,
+  restoreTrash,
+} from "@/app/painel/actions/lixeira"
 import { ActionForm } from "@/components/painel/action-form"
 import { ConfirmAction } from "@/components/painel/confirm-action"
 import { SubmitButton } from "@/components/painel/submit-button"

@@ -3,7 +3,7 @@
 import { useState, useTransition, type ReactNode } from "react"
 import { ShuffleIcon } from "lucide-react"
 
-import { updateActivityShuffle } from "@/app/painel/actions"
+import { updateActivityShuffle } from "@/app/painel/actions/atividade"
 import {
   Card,
   CardContent,

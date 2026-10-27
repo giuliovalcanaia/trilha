@@ -2,7 +2,7 @@ import type { ReactNode } from "react"
 import Link from "next/link"
 import { ArrowLeftIcon } from "lucide-react"
 
-import type { ActionResult } from "@/app/painel/actions"
+import type { ActionResult } from "@/lib/actions/result"
 import { AtividadeDadosInline } from "@/components/painel/atividade-dados-inline"
 import { buttonVariants } from "@/components/ui/button"
 
