@@ -10,6 +10,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import {
   flattenPastasVisiveis,
@@ -30,6 +31,12 @@ export function NavProjects({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { navegar } = useNavegacaoPastas()
+  const { isMobile, setOpenMobile } = useSidebar()
+
+  function navegarPasta(pastaId: number | null) {
+    navegar(pastaId)
+    if (isMobile) setOpenMobile(false)
+  }
 
   const pastaDaAtividade = useMemo(
     () =>
@@ -111,7 +118,7 @@ export function NavProjects({
                   else setHomeAberta(true)
                 }
 
-                navegar(null)
+                navegarPasta(null)
               }}
               onKeyDown={(event) => {
                 if (
@@ -166,7 +173,7 @@ export function NavProjects({
                       alternarPasta(pasta.id)
                     }
 
-                    navegar(pasta.id)
+                    navegarPasta(pasta.id)
                   }}
                   onKeyDown={(event) => {
                     if (event.key === "ArrowRight" && temFilhos && !aberta) {

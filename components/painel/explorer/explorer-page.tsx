@@ -59,6 +59,7 @@ import { pastaBreadcrumb, pastaDescendantIds } from "@/lib/dominio/pastas"
 import { itemKey } from "@/lib/dominio/selecao"
 import type { ExplorerData } from "@/lib/painel/explorer-data"
 import { useSelecao } from "@/components/painel/selecao-context"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { useNavegacaoPastas } from "@/hooks/use-navegacao-pastas"
 import { useStoredPreference } from "@/hooks/use-stored-preference"
 import { cn } from "@/lib/utils"
@@ -85,6 +86,7 @@ function normalizar(value: string) {
 export function ExplorerPage({ data }: { data: ExplorerData }) {
   const router = useRouter()
   const { pastaAtualId, navegar } = useNavegacaoPastas()
+  const isMobile = useIsMobile()
   const { selecionados, selecionar, definir, limpar } = useSelecao()
   const [view, setView] = useStoredPreference("painel:view", VIEWS, "lista")
   const [ordem, setOrdem] = useStoredPreference(
@@ -488,6 +490,7 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
               view={view}
               selected={selecionados.has(itemKey(item))}
               local={localDoItem(item)}
+              abrirComUmClique={isMobile}
               onSelect={(mods) => selecionarItem(item, mods)}
               onOpen={() => abrir(item)}
               onNewFolder={() =>

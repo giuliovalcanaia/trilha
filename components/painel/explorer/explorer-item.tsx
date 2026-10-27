@@ -63,6 +63,8 @@ type ExplorerItemProps = {
   view: "lista" | "grade"
   selected: boolean
   local?: string
+  /** No mobile não existe duplo clique: um toque abre o item. */
+  abrirComUmClique?: boolean
   onSelect: (mods?: { ctrl?: boolean; shift?: boolean }) => void
   onOpen: () => void
   onNewFolder: () => void
@@ -88,6 +90,7 @@ export function ExplorerItemView({
   view,
   selected,
   local,
+  abrirComUmClique = false,
   onSelect,
   onOpen,
   onNewFolder,
@@ -238,6 +241,12 @@ export function ExplorerItemView({
 
   function handleClick(event: React.MouseEvent) {
     if (ignorarClique(event)) return
+
+    if (abrirComUmClique) {
+      onOpen()
+      return
+    }
+
     onSelect({
       ctrl: event.metaKey || event.ctrlKey,
       shift: event.shiftKey,
