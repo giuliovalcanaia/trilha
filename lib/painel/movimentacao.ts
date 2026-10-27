@@ -1,6 +1,6 @@
+import type { ProfessorCtx } from "@/lib/actions/with-professor"
 import { fail, ok, type ActionResult } from "@/lib/actions/result"
 import { revalidatePainel } from "@/lib/actions/revalidate"
-import type { Teacher } from "@/lib/actions/teacher"
 import type { SupabaseClient } from "@/lib/supabase/server"
 
 async function pastaDescendants(supabase: SupabaseClient, rootId: number) {
@@ -61,14 +61,18 @@ async function validarDestinoPasta(
 }
 
 export async function movePastaTo(
-  teacher: Teacher,
+  professor: ProfessorCtx,
   id: number,
   parentId: number | null
 ): Promise<ActionResult> {
-  const erroDestino = await validarDestinoPasta(teacher.supabase, id, parentId)
+  const erroDestino = await validarDestinoPasta(
+    professor.supabase,
+    id,
+    parentId
+  )
   if (erroDestino) return fail(erroDestino)
 
-  const { data, error } = await teacher.supabase
+  const { data, error } = await professor.supabase
     .from("pastas")
     .update({ parent_id: parentId })
     .eq("id", id)
@@ -88,12 +92,12 @@ export async function movePastaTo(
 }
 
 export async function moveAtividadeTo(
-  teacher: Teacher,
+  professor: ProfessorCtx,
   id: number,
   pastaId: number | null
 ): Promise<ActionResult> {
   if (pastaId !== null) {
-    const { data: pasta } = await teacher.supabase
+    const { data: pasta } = await professor.supabase
       .from("pastas")
       .select("id")
       .eq("id", pastaId)
@@ -103,7 +107,7 @@ export async function moveAtividadeTo(
     if (!pasta) return fail("Pasta de destino inválida.")
   }
 
-  const { data, error } = await teacher.supabase
+  const { data, error } = await professor.supabase
     .from("atividades")
     .update({ pasta_id: pastaId })
     .eq("id", id)

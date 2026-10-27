@@ -1,20 +1,28 @@
-export function field(formData: FormData, name: string) {
-  const value = formData.get(name)
-  return typeof value === "string" ? value.trim() : ""
+import { z } from "zod"
+
+/** Converte o FormData em um objeto simples; valores repetidos ficam com o último. */
+export function formDataToObject(formData: FormData): Record<string, string> {
+  const data: Record<string, string> = {}
+
+  for (const [key, value] of formData.entries()) {
+    if (typeof value === "string") data[key] = value
+  }
+
+  return data
 }
 
-/** Como `field`, mas sem aparar as bordas (preserva as linhas do textarea). */
-export function textField(formData: FormData, name: string) {
-  const value = formData.get(name)
-  return typeof value === "string" ? value : ""
-}
+/**
+ * ID opcional de pasta (`parent_id`/`pasta_id`). Vazio, ausente ou inválido vira
+ * `null`, que representa a raiz — mesmo comportamento do antigo `idField`.
+ */
+export const optionalId = z
+  .string()
+  .optional()
+  .transform((value) => {
+    const id = Number(value ?? "")
+    return Number.isInteger(id) && id > 0 ? id : null
+  })
 
-export function optionalField(formData: FormData, name: string) {
-  const value = field(formData, name)
-  return value ? value : null
-}
-
-export function idField(formData: FormData, name: string) {
-  const value = Number(field(formData, name))
-  return Number.isInteger(value) && value > 0 ? value : null
-}
+/** ID obrigatório, com a mensagem de erro usada pela action. */
+export const requiredId = (message: string) =>
+  z.coerce.number({ message }).int(message).positive(message)
