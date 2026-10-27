@@ -1,5 +1,7 @@
 # Trilha
 
+[![CI](https://github.com/giuliovalcanaia/trilha/actions/workflows/ci.yml/badge.svg)](https://github.com/giuliovalcanaia/trilha/actions/workflows/ci.yml)
+
 Plataforma para montar atividades em sequência e acompanhar o progresso dos
 alunos em tempo real.
 
@@ -83,7 +85,26 @@ O `supabase/seed.sql` cria dados de teste no ambiente local:
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run format` | Prettier em `**/*.{ts,tsx}` |
 | `npm run format:check` | Confere a formatação sem alterar arquivos |
+| `npm test` | Testes de unidade (Vitest) |
+| `npm run test:coverage` | Testes de unidade com cobertura (v8) |
+| `npm run test:e2e` | E2E do fluxo principal (Playwright) |
 | `npm run db:reset` | Recria o banco local com migrations + seed |
+| `npm run db:test` | Testes de RLS e RPCs no banco (pgTAP) |
+| `npm run db:lint` | Procura erros de schema/funções no banco local |
+
+## Testes
+
+- **Unidade** (`npm test`): funções puras de `lib/` — normalização de links,
+  notas, árvore de pastas, seleção, datas e o extrator de prévia de links
+  (incluindo o bloqueio de hosts privados).
+- **Banco** (`npm run db:test`): pgTAP cobrindo a matriz de RLS (isolamento por
+  professor e por aluno, compartilhamento de pastas) e o fluxo do aluno nas
+  RPCs (entrada, conclusão com senha, expulsão e retorno).
+- **Ponta a ponta** (`npm run test:e2e`): um fluxo real no navegador —
+  professor cria a atividade, aluno entra com o código e conclui, professor
+  acompanha e encerra. Sobe o app e reseta o banco automaticamente.
+
+O `npm run test:e2e` precisa do stack local no ar (`npx supabase start`).
 
 ## Estrutura
 
@@ -92,7 +113,7 @@ app/                     rotas (App Router)
   aluno/                 entrada do aluno
   atividade/             visão do aluno
   painel/                área do professor
-    actions.ts           server actions do painel
+    actions/             server actions por domínio
   previa/                pré-visualização da atividade
 components/
   aluno/                 componentes da área do aluno
@@ -100,15 +121,20 @@ components/
   layout/                sidebar, navegação, tema
   painel/                componentes do painel
   ui/                    componentes gerados pelo shadcn/ui
+e2e/                     fluxo Playwright
 hooks/                   hooks reutilizáveis
 lib/
+  actions/               helpers das server actions (auth + zod + erros)
+  auth/                  sessão de professor e de aluno
+  data/                  leituras tipadas do banco
   dominio/               regras puras (links, notas, pastas, seleção)
-  painel/                carregamento de dados do painel
+  painel/                operações do painel
   supabase/              clientes browser/server e tipos do banco
   env.ts                 validação das variáveis de ambiente
   format.ts              formatação de datas
 supabase/
   migrations/            schema, RLS e funções
+  tests/                 pgTAP (RLS e RPCs)
   seed.sql               dados de teste
 ```
 

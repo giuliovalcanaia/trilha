@@ -17,7 +17,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "db:reset": "npx supabase db reset",
-    "db:test": "npx supabase test db"
+    "db:test": "npx supabase test db",
+    "db:lint": "npx supabase db lint --local --fail-on warning"
   },
   "engines": {
     "node": ">=20"

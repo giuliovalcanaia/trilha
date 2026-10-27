@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  app:
+    name: App (formatação, lint, tipos, testes, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # O build só valida o formato das variáveis (`lib/env.ts`); nenhuma página
+      # estática consulta o Supabase nesta etapa.
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+
+      # `test:coverage` roda o Vitest e falha se a cobertura cair do limite.
+      - run: npm run test:coverage
+
+      - run: npm run build
+
+  db:
+    name: Banco (pgTAP e lint de schema)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - run: supabase start
+      - run: supabase db reset
+      - run: supabase test db
+      - run: supabase db lint --local --fail-on warning
+
+      - if: always()
+        run: supabase stop --no-backup
+
+  e2e:
+    name: E2E (fluxo principal)
+    # Um teste caro: roda em PR e nos pushes para a produção.
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      - run: supabase start
+
+      - name: Configurar .env.local com as chaves do stack local
+        run: |
+          supabase status -o env > /tmp/supabase.env
+          set -a
+          . /tmp/supabase.env
+          set +a
+          printf 'NEXT_PUBLIC_SUPABASE_URL=%s\nNEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=%s\n' \
+            "$API_URL" "$PUBLISHABLE_KEY" > .env.local
+
+      - run: npm run test:e2e
+
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+      - if: always()
+        run: supabase stop --no-backup

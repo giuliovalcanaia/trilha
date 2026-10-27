@@ -8,6 +8,21 @@ const execFileAsync = promisify(execFile)
 const OPCOES = { timeout: 180_000, maxBuffer: 10 * 1024 * 1024 }
 
 /**
+ * Roda um comando da CLI do Supabase.
+ *
+ * No CI o binário vem do `supabase/setup-cli` e está no PATH; no dia a dia ele
+ * costuma existir só via `npx`. Por isso o fallback.
+ */
+async function supabaseCli(args: string[]) {
+  try {
+    return await execFileAsync("supabase", args, OPCOES)
+  } catch (erro) {
+    if ((erro as NodeJS.ErrnoException).code !== "ENOENT") throw erro
+    return execFileAsync("npx", ["supabase", ...args], OPCOES)
+  }
+}
+
+/**
  * `supabase db reset` recria o schema e aplica o seed (professor de teste,
  * atividade `TESTE1`). O comando reinicia containers e, de vez em quando, o
  * restart falha por conta do Docker — por isso a segunda tentativa.
@@ -15,7 +30,7 @@ const OPCOES = { timeout: 180_000, maxBuffer: 10 * 1024 * 1024 }
 async function resetarBanco() {
   for (let tentativa = 1; ; tentativa++) {
     try {
-      await execFileAsync("npx", ["supabase", "db", "reset"], OPCOES)
+      await supabaseCli(["db", "reset"])
       return
     } catch (erro) {
       if (tentativa >= 2) throw erro
@@ -28,7 +43,7 @@ setup("reseta o banco local com o seed", async () => {
   setup.setTimeout(240_000)
 
   try {
-    await execFileAsync("npx", ["supabase", "status"], { timeout: 60_000 })
+    await supabaseCli(["status"])
   } catch {
     throw new Error(
       "O Supabase local não está rodando. Rode `npx supabase start`."
