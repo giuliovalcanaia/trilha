@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation"
-
 import { AppSidebar } from "@/components/layout/app-sidebar"
 import { SelecaoProvider } from "@/components/painel/selecao-context"
 import {
@@ -14,7 +12,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { createClient } from "@/lib/supabase/server"
+import { requireProfessor } from "@/lib/auth/professor"
 import { pastasComRaizesVisiveis } from "@/lib/dominio/pastas"
 
 export default async function PainelLayout({
@@ -22,21 +20,10 @@ export default async function PainelLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data } = await supabase.auth.getClaims()
-  const userId = data?.claims?.sub
-
-  if (!userId) redirect("/login")
-
-  const { data: professor } = await supabase
-    .from("professores")
-    .select("id, nome")
-    .eq("user_id", userId)
-    .maybeSingle()
-
-  // Aluno anônimo (ou usuário sem registro de professor): fora do painel.
-  // Nunca redirecionar para /login aqui, para não criar loop com o proxy.
-  if (!professor) redirect("/")
+  // Sem sessão vai para /login; aluno anônimo volta para a entrada. O
+  // `requireProfessor` nunca manda um aluno anônimo para /login, para não
+  // criar loop com o proxy.
+  const { supabase, professor, email } = await requireProfessor()
 
   const [
     { data: pastas },
@@ -63,9 +50,6 @@ export default async function PainelLayout({
       .is("deleted_at", null)
       .not("pasta_id", "is", null),
   ])
-
-  const email =
-    typeof data.claims.email === "string" ? data.claims.email : undefined
 
   const pastasVisiveis = pastasComRaizesVisiveis(pastas ?? [])
 

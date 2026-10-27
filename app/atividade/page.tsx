@@ -5,8 +5,8 @@ import { StudentActivityRealtime } from "@/components/aluno/student-activity-rea
 import { StudentLinkList } from "@/components/aluno/student-link-list"
 import type { ActivityStatus } from "@/components/aluno/clickable-card"
 import { Card, CardDescription, CardHeader } from "@/components/ui/card"
+import { getEstudante, getParticipacaoDoAluno } from "@/lib/auth/estudante"
 import { formatarData } from "@/lib/format"
-import { createClient } from "@/lib/supabase/server"
 
 const statuses: ActivityStatus[] = [
   "aberta",
@@ -29,44 +29,19 @@ export default async function Page({
 
   if (!codigoEntrada) redirect("/")
 
-  const supabase = await createClient()
-  const { data: claimsData } = await supabase.auth.getClaims()
-  const userId = claimsData?.claims?.sub
+  const aluno = await getEstudante()
 
-  if (!userId) {
+  if (!aluno) {
     redirect(`/aluno?codigo=${encodeURIComponent(codigoEntrada)}`)
   }
 
-  const { data: estudante } = await supabase
-    .from("estudantes")
-    .select("id")
-    .eq("user_id", userId)
-    .maybeSingle()
+  const dados = await getParticipacaoDoAluno(codigoEntrada)
 
-  if (!estudante) {
+  if (!dados) {
     redirect(`/aluno?codigo=${encodeURIComponent(codigoEntrada)}`)
   }
 
-  const { data: aplicacao } = await supabase
-    .from("aplicacoes")
-    .select("id, atividade_id, status, data")
-    .eq("codigo", codigoEntrada)
-    .maybeSingle()
-
-  if (!aplicacao) {
-    redirect(`/aluno?codigo=${encodeURIComponent(codigoEntrada)}`)
-  }
-
-  const { data: participacao } = await supabase
-    .from("participacoes")
-    .select("id, nome, iniciado_em, concluido_em, expulso_em")
-    .eq("aplicacao_id", aplicacao.id)
-    .eq("estudante_id", estudante.id)
-    .maybeSingle()
-
-  if (!participacao) {
-    redirect(`/aluno?codigo=${encodeURIComponent(codigoEntrada)}`)
-  }
+  const { supabase, aplicacao, participacao } = dados
 
   if (participacao.expulso_em) {
     redirect(`/aluno?codigo=${encodeURIComponent(codigoEntrada)}&expulso=1`)

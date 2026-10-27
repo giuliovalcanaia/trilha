@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { notFound, redirect } from "next/navigation"
+import { notFound } from "next/navigation"
 import { ArrowLeftIcon, EyeIcon, ShuffleIcon } from "lucide-react"
 
 import {
@@ -11,8 +11,8 @@ import { StudentActivityHeader } from "@/components/aluno/student-activity-heade
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader } from "@/components/ui/card"
+import { requireProfessor } from "@/lib/auth/professor"
 import { formatarData } from "@/lib/format"
-import { createClient } from "@/lib/supabase/server"
 
 const statusLabels: Record<string, string> = {
   rascunho: "Encerrada",
@@ -35,19 +35,7 @@ export default async function Page({
 
   if (!Number.isInteger(atividadeId) || atividadeId <= 0) notFound()
 
-  const supabase = await createClient()
-  const { data: claimsData } = await supabase.auth.getClaims()
-  const userId = claimsData?.claims?.sub
-
-  if (!userId) redirect("/login")
-
-  const { data: professor } = await supabase
-    .from("professores")
-    .select("id")
-    .eq("user_id", userId)
-    .maybeSingle()
-
-  if (!professor) redirect("/")
+  const { supabase } = await requireProfessor()
 
   const { data: atividade } = await supabase
     .from("atividades")

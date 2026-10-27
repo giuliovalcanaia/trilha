@@ -4,7 +4,7 @@ import { UserXIcon } from "lucide-react"
 import { StudentNameForm } from "@/components/aluno/student-name-form"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { createClient } from "@/lib/supabase/server"
+import { getProfessor } from "@/lib/auth/professor"
 
 export default async function Page({
   searchParams,
@@ -16,19 +16,9 @@ export default async function Page({
 
   if (!codigoAtividade) redirect("/")
 
-  const supabase = await createClient()
-  const { data } = await supabase.auth.getClaims()
-  const userId = data?.claims?.sub
+  const professor = await getProfessor()
 
-  if (userId) {
-    const { data: professor } = await supabase
-      .from("professores")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle()
-
-    if (professor) redirect("/painel")
-  }
+  if (professor) redirect("/painel")
 
   return (
     <div className="relative flex min-h-screen w-full flex-col items-center justify-center gap-4 p-4">

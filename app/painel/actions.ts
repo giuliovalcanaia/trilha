@@ -5,6 +5,7 @@ import { randomInt } from "node:crypto"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
+import { getProfessor } from "@/lib/auth/professor"
 import { parseLinkList } from "@/lib/dominio/links"
 import { parseNota } from "@/lib/dominio/nota"
 import { separarChaves } from "@/lib/dominio/selecao"
@@ -70,21 +71,11 @@ function parseChaves(raw: string): string[] {
 }
 
 async function getTeacher() {
-  const supabase = await createClient()
-  const { data } = await supabase.auth.getClaims()
-  const userId = data?.claims?.sub
+  const sessao = await getProfessor()
 
-  if (!userId) return null
+  if (!sessao) return null
 
-  const { data: professor } = await supabase
-    .from("professores")
-    .select("id")
-    .eq("user_id", userId)
-    .maybeSingle()
-
-  if (!professor) return null
-
-  return { supabase, professorId: professor.id }
+  return { supabase: sessao.supabase, professorId: sessao.professor.id }
 }
 
 function revalidatePainel(extra?: string) {

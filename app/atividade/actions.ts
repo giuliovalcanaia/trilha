@@ -2,17 +2,16 @@
 
 import { revalidatePath } from "next/cache"
 
-import { createClient } from "@/lib/supabase/server"
+import { getEstudante } from "@/lib/auth/estudante"
 
 export async function markLinkAsStarted(aplicacaoId: number, linkId: number) {
-  const supabase = await createClient()
-  const { data } = await supabase.auth.getClaims()
+  const aluno = await getEstudante()
 
-  if (!data?.claims) {
+  if (!aluno) {
     return { error: "not_authenticated" as const }
   }
 
-  const { error } = await supabase.rpc("update_my_progress", {
+  const { error } = await aluno.supabase.rpc("update_my_progress", {
     p_aplicacao_id: aplicacaoId,
     p_link_id: linkId,
     p_status: "fazendo",
@@ -32,14 +31,13 @@ export async function completeLink(
   senha: string,
   pontuacao: number | null
 ) {
-  const supabase = await createClient()
-  const { data } = await supabase.auth.getClaims()
+  const aluno = await getEstudante()
 
-  if (!data?.claims) {
+  if (!aluno) {
     return { error: "not_authenticated" as const }
   }
 
-  const { error } = await supabase.rpc("complete_link", {
+  const { error } = await aluno.supabase.rpc("complete_link", {
     p_aplicacao_id: aplicacaoId,
     p_link_id: linkId,
     p_senha: senha,
