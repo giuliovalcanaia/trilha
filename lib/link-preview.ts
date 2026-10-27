@@ -113,7 +113,7 @@ function extractPreview(html: string) {
   return { title, description }
 }
 
-function isPrivateHostname(hostname: string) {
+export function isPrivateHostname(hostname: string) {
   const host = hostname.toLowerCase().replace(/\.$/, "")
 
   if (
