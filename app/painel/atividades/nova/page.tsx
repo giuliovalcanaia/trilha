@@ -29,7 +29,7 @@ export default async function Page({
     pastaDestino === null ? "/painel" : `/painel/pastas/${pastaDestino.id}`
 
   return (
-    <div className="m-4 max-w-5xl">
+    <div className="w-full">
       <NovaAtividadeForm
         action={createAtividade}
         pastaId={pastaDestino?.id ?? null}

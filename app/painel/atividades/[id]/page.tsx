@@ -153,7 +153,7 @@ export default async function Page({
       initialTab={abaInicial}
     >
       <AtividadeTempoReal atividadeId={atividade.id} />
-      <div className="m-4 max-w-5xl space-y-6">
+      <div className="w-full space-y-6">
         <AtividadeCabecalho
           voltarHref={voltarHref}
           dados={{
