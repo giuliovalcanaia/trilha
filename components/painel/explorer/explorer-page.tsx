@@ -10,7 +10,7 @@ import {
   SearchIcon,
   Share2Icon,
 } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
 import {
   duplicateAtividade,
@@ -66,6 +66,11 @@ import { cn } from "@/lib/utils"
 const DRAG_MIME = "application/x-painel-item"
 const VIEWS = ["lista", "grade"] as const
 
+/** URL do editor; o prefetch precisa bater com o que o `abrir` navega. */
+function urlDaAtividade(id: number) {
+  return `/painel/atividades/${id}?aba=configuracoes`
+}
+
 type DialogState =
   | { kind: "nova-pasta"; parentId: number | null }
   | { kind: "renomear"; item: ExplorerItem }
@@ -84,6 +89,7 @@ function normalizar(value: string) {
 
 export function ExplorerPage({ data }: { data: ExplorerData }) {
   const router = useRouter()
+  const pathname = usePathname()
   const { pastaAtualId, navegar } = useNavegacaoPastas()
   const isMobile = useIsMobile()
   const { selecionados, selecionar, definir, limpar } = useSelecao()
@@ -99,6 +105,18 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
   const [dragging, setDragging] = useState<ExplorerItem | null>(null)
   const [dragOverKey, setDragOverKey] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  // Atividade cujo editor está sendo carregado. O cartão mostra spinner no
+  // mesmo instante do clique, antes de o esqueleto da rota chegar. A rota de
+  // origem fica guardada para não deixar o spinner preso se a navegação não
+  // completar.
+  const [abrindo, setAbrindo] = useState<{ id: number; rota: string } | null>(
+    null
+  )
+
+  // Mesmo padrão do `pastaAnterior`: ajuste no render, não em efeito.
+  if (abrindo && abrindo.rota !== pathname) {
+    setAbrindo(null)
+  }
 
   // A pasta mudou via History API (sem remontar o componente): a busca some,
   // como se a tela tivesse sido trocada.
@@ -293,7 +311,8 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
       navegar(item.id)
       return
     }
-    router.push(`/painel/atividades/${item.id}?aba=configuracoes`)
+    setAbrindo({ id: item.id, rota: pathname })
+    router.push(urlDaAtividade(item.id))
   }
 
   function selecionarItem(
@@ -490,6 +509,12 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
               selected={selecionados.has(itemKey(item))}
               local={localDoItem(item)}
               abrirComUmClique={isMobile}
+              abrindo={!isPasta(item) && abrindo?.id === item.id}
+              onPrefetch={
+                isPasta(item)
+                  ? undefined
+                  : () => router.prefetch(urlDaAtividade(item.id))
+              }
               onSelect={(mods) => selecionarItem(item, mods)}
               onOpen={() => abrir(item)}
               onNewFolder={() =>

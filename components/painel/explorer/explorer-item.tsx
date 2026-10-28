@@ -11,6 +11,7 @@ import {
   FolderIcon,
   FolderInputIcon,
   FolderPlusIcon,
+  LoaderCircleIcon,
   MoreHorizontalIcon,
   PencilIcon,
   PlusIcon,
@@ -52,6 +53,10 @@ type ExplorerItemProps = {
   local?: string
   /** No mobile não existe duplo clique: um toque abre o item. */
   abrirComUmClique?: boolean
+  /** A atividade está sendo carregada: mostra spinner e `aria-busy`. */
+  abrindo?: boolean
+  /** Chamado no hover/foco para pré-carregar a rota (só faz sentido em atividade). */
+  onPrefetch?: () => void
   onSelect: (mods?: { ctrl?: boolean; shift?: boolean }) => void
   onOpen: () => void
   onNewFolder: () => void
@@ -78,6 +83,8 @@ export function ExplorerItemView({
   selected,
   local,
   abrirComUmClique = false,
+  abrindo = false,
+  onPrefetch,
   onSelect,
   onOpen,
   onNewFolder,
@@ -245,17 +252,17 @@ export function ExplorerItemView({
     onOpen()
   }
 
-  const icone = pasta ? (
-    <FolderIcon
-      className={cn(view === "grade" ? "size-9" : "size-4", "text-primary")}
+  const tamanhoIcone = view === "grade" ? "size-9" : "size-4"
+
+  const icone = abrindo ? (
+    <LoaderCircleIcon
+      className={cn(tamanhoIcone, "animate-spin text-muted-foreground")}
+      aria-hidden
     />
+  ) : pasta ? (
+    <FolderIcon className={cn(tamanhoIcone, "text-primary")} />
   ) : (
-    <FileTextIcon
-      className={cn(
-        view === "grade" ? "size-9" : "size-4",
-        "text-muted-foreground"
-      )}
-    />
+    <FileTextIcon className={cn(tamanhoIcone, "text-muted-foreground")} />
   )
 
   return (
@@ -273,16 +280,20 @@ export function ExplorerItemView({
           selected &&
             "border-primary/60 bg-accent text-accent-foreground hover:ring-2 hover:ring-primary/40 hover:ring-inset",
           dropActive && "border-primary ring-2 ring-primary/40",
-          disabledDrop && "opacity-60"
+          disabledDrop && "opacity-60",
+          abrindo && "cursor-progress"
         )}
         role="option"
         aria-selected={selected}
+        aria-busy={abrindo || undefined}
         data-selected={selected}
         data-selecionavel
         tabIndex={0}
         aria-label={nome}
         title={nome}
         draggable
+        onMouseEnter={onPrefetch}
+        onFocus={onPrefetch}
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
         onContextMenu={(event) => {
