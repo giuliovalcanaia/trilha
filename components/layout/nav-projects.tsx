@@ -2,7 +2,12 @@
 
 import { usePathname, useSearchParams } from "next/navigation"
 import { useMemo, useState } from "react"
-import { ChevronRightIcon, FolderIcon, HouseIcon } from "lucide-react"
+import {
+  ChevronRightIcon,
+  FolderIcon,
+  HouseIcon,
+  LoaderCircleIcon,
+} from "lucide-react"
 
 import {
   SidebarGroup,
@@ -30,7 +35,7 @@ export function NavProjects({
 }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const { navegar } = useNavegacaoPastas()
+  const { navegar, navegando, prefetch } = useNavegacaoPastas()
   const { isMobile, setOpenMobile } = useSidebar()
 
   function navegarPasta(pastaId: number | null) {
@@ -111,7 +116,10 @@ export function NavProjects({
               isActive={pathname === "/painel"}
               tooltip="home"
               aria-expanded={homeTemFilhos ? homeAberta : undefined}
+              aria-busy={navegando?.pastaId === null || undefined}
               style={{ paddingLeft: "8px" }}
+              onMouseEnter={() => prefetch(null)}
+              onFocus={() => prefetch(null)}
               onClick={(event) => {
                 if (event.detail === 1 && homeTemFilhos) {
                   if (pathname === "/painel") alternarHome()
@@ -147,7 +155,11 @@ export function NavProjects({
               ) : (
                 <span className="size-4 shrink-0" aria-hidden="true" />
               )}
-              <HouseIcon />
+              {navegando?.pastaId === null ? (
+                <LoaderCircleIcon className="animate-spin" aria-hidden />
+              ) : (
+                <HouseIcon />
+              )}
               <span className="truncate">home</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -165,9 +177,12 @@ export function NavProjects({
                   isActive={pastaAtualId === pasta.id}
                   tooltip={pasta.nome}
                   aria-expanded={temFilhos ? aberta : undefined}
+                  aria-busy={navegando?.pastaId === pasta.id || undefined}
                   style={{
                     paddingLeft: `${8 + (pasta.depth + 1) * 14}px`,
                   }}
+                  onMouseEnter={() => prefetch(pasta.id)}
+                  onFocus={() => prefetch(pasta.id)}
                   onClick={(event) => {
                     if (event.detail === 1 && temFilhos) {
                       alternarPasta(pasta.id)
@@ -198,7 +213,11 @@ export function NavProjects({
                   ) : (
                     <span className="size-4 shrink-0" aria-hidden="true" />
                   )}
-                  <FolderIcon />
+                  {navegando?.pastaId === pasta.id ? (
+                    <LoaderCircleIcon className="animate-spin" aria-hidden />
+                  ) : (
+                    <FolderIcon />
+                  )}
                   <span className="truncate">{pasta.nome}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>

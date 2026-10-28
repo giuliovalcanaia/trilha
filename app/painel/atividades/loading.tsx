@@ -1,6 +1,5 @@
+import { Bloco } from "@/components/painel/loading-bloco"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
 
 /**
  * Esqueleto do editor de atividade.
@@ -97,15 +96,5 @@ export default function Loading() {
         </Card>
       </div>
     </div>
-  )
-}
-
-/** Bloco cinza do esqueleto; não pulsa para quem pediu menos movimento. */
-function Bloco({ className }: { className?: string }) {
-  return (
-    <Skeleton
-      className={cn("motion-reduce:animate-none", className)}
-      aria-hidden
-    />
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"
+import { useState } from "react"
 
 /** Extrai o id da pasta de uma URL do explorador (`/painel` ou `/painel/pastas/1`). */
 export function pastaIdDaRota(pathname: string): number | null {
@@ -23,16 +24,28 @@ function rotaDoExplorador(pathname: string) {
  *
  * Dentro do explorador, atualiza a URL pela History API nativa — o Next 16
  * sincroniza `usePathname` sem iniciar uma transição de rota. Fora dele (por
- * exemplo, numa atividade), usa a navegação normal do router.
+ * exemplo, numa atividade ou na lixeira), usa a navegação normal do router e
+ * guarda em `navegando` qual pasta está carregando, para a sidebar mostrar
+ * spinner em vez de parecer que o clique falhou.
  */
 export function useNavegacaoPastas() {
   const pathname = usePathname()
   const router = useRouter()
+  const [navegando, setNavegando] = useState<{
+    pastaId: number | null
+    rota: string
+  } | null>(null)
+
+  // Mesmo padrão do explorador: ajuste no render, não em efeito.
+  if (navegando && navegando.rota !== pathname) {
+    setNavegando(null)
+  }
 
   function navegar(pastaId: number | null, opcoes?: { replace?: boolean }) {
     const url = urlDaPasta(pastaId)
 
     if (!rotaDoExplorador(pathname)) {
+      setNavegando({ pastaId, rota: pathname })
       router.push(url)
       return
     }
@@ -46,8 +59,19 @@ export function useNavegacaoPastas() {
     )
   }
 
+  /**
+   * Aquece o destino quando a navegação vai passar pelo servidor. Dentro do
+   * explorador não faz sentido: a troca já é local.
+   */
+  function prefetch(pastaId: number | null) {
+    if (rotaDoExplorador(pathname)) return
+    router.prefetch(urlDaPasta(pastaId))
+  }
+
   return {
     pastaAtualId: pastaIdDaRota(pathname),
     navegar,
+    navegando,
+    prefetch,
   }
 }

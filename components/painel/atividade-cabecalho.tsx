@@ -1,10 +1,8 @@
 import type { ReactNode } from "react"
-import Link from "next/link"
-import { ArrowLeftIcon } from "lucide-react"
 
 import type { ActionResult } from "@/lib/actions/result"
 import { AtividadeDadosInline } from "@/components/painel/atividade-dados-inline"
-import { buttonVariants } from "@/components/ui/button"
+import { VoltarLink } from "@/components/painel/voltar-link"
 
 type AtividadeDados =
   | {
@@ -36,13 +34,7 @@ export function AtividadeCabecalho({
 }: AtividadeCabecalhoProps) {
   return (
     <div className="space-y-2">
-      <Link
-        href={voltarHref}
-        className={buttonVariants({ variant: "ghost", size: "sm" })}
-      >
-        <ArrowLeftIcon data-icon="inline-start" />
-        Voltar
-      </Link>
+      <VoltarLink href={voltarHref} />
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
