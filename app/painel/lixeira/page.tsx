@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { TrashPage } from "@/components/painel/explorer/trash-page"
+import { TrashPage } from "@/components/painel/lixeira/trash-page"
 import { loadTrash } from "@/lib/data/lixeira"
 import { createClient } from "@/lib/supabase/server"
 

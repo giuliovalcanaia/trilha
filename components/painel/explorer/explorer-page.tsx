@@ -54,6 +54,7 @@ import {
 } from "@/components/painel/explorer/explorer-types"
 import { toast } from "@/components/ui/toast"
 import type { ActionResult } from "@/lib/actions/result"
+import { normalizarBusca } from "@/lib/dominio/busca"
 import { pastaBreadcrumb, pastaDescendantIds } from "@/lib/dominio/pastas"
 import { itemKey } from "@/lib/dominio/selecao"
 import type { ExplorerData } from "@/lib/painel/explorer-data"
@@ -79,13 +80,6 @@ type DialogState =
   | { kind: "lixeira"; item: ExplorerItem }
   | { kind: "lixeira-selecao" }
   | null
-
-function normalizar(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLocaleLowerCase("pt-BR")
-}
 
 export function ExplorerPage({ data }: { data: ExplorerData }) {
   const router = useRouter()
@@ -181,12 +175,12 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
     [data.pastas, data.todasAtividades]
   )
 
-  const termo = normalizar(query.trim())
+  const termo = normalizarBusca(query.trim())
   const visiveis = useMemo(() => {
     const fonte = termo ? itensGlobais : itens
     const filtrados = fonte.filter((item) => {
       if (!termo) return true
-      return normalizar(nomeDoItem(item)).includes(termo)
+      return normalizarBusca(nomeDoItem(item)).includes(termo)
     })
 
     return [...filtrados].sort((a, b) => {

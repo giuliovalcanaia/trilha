@@ -22,6 +22,8 @@ export default defineConfig({
       reporter: ["text", "html"],
       reportsDirectory: "coverage",
       include: [
+        "lib/dominio/busca.ts",
+        "lib/dominio/lixeira.ts",
         "lib/dominio/links.ts",
         "lib/dominio/nota.ts",
         "lib/dominio/pastas.ts",

@@ -3,9 +3,6 @@
 import * as React from "react"
 import Link from "next/link"
 import {
-  ArrowDownIcon,
-  ArrowUpIcon,
-  ChevronDownIcon,
   ChevronRightIcon,
   FolderPlusIcon,
   HouseIcon,
@@ -16,25 +13,30 @@ import {
 } from "lucide-react"
 
 import { Button, buttonVariants } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import {
+  type OpcaoOrdenacao,
+  OrdenarMenu,
+} from "@/components/painel/ordenar-menu"
 import { type OrdemExplorer } from "@/components/painel/explorer/explorer-types"
 import { type PastaRow } from "@/lib/dominio/pastas"
 import { cn } from "@/lib/utils"
 
-const opcoesOrdem: { value: OrdemExplorer; label: string }[] = [
-  { value: "nome-asc", label: "Nome (A–Z)" },
-  { value: "nome-desc", label: "Nome (Z–A)" },
-  { value: "data-desc", label: "Data de criação (mais recentes)" },
-  { value: "data-asc", label: "Data de criação (mais antigas)" },
+const opcoesOrdem: OpcaoOrdenacao<OrdemExplorer>[] = [
+  { value: "nome-asc", label: "Nome (A–Z)", campo: "Nome", crescente: true },
+  { value: "nome-desc", label: "Nome (Z–A)", campo: "Nome", crescente: false },
+  {
+    value: "data-desc",
+    label: "Data de criação (mais recentes)",
+    campo: "Data",
+    crescente: false,
+  },
+  {
+    value: "data-asc",
+    label: "Data de criação (mais antigas)",
+    campo: "Data",
+    crescente: true,
+  },
 ]
 
 export function targetKey(pastaId: number | null) {
@@ -142,7 +144,11 @@ export function ExplorerToolbar({
           </Button>
         </div>
 
-        <OrdenarMenu ordem={ordem} onOrdemChange={onOrdemChange} />
+        <OrdenarMenu
+          valor={ordem}
+          opcoes={opcoesOrdem}
+          onValueChange={onOrdemChange}
+        />
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <Button type="button" variant="outline" onClick={onNewFolder}>
@@ -159,68 +165,6 @@ export function ExplorerToolbar({
         </div>
       </div>
     </div>
-  )
-}
-
-function OrdenarMenu({
-  ordem,
-  onOrdemChange,
-}: {
-  ordem: OrdemExplorer
-  onOrdemChange: (ordem: OrdemExplorer) => void
-}) {
-  const campo = ordem.startsWith("nome") ? "Nome" : "Data"
-  const crescente = ordem.endsWith("asc")
-  const opcaoAtual = opcoesOrdem.find((opcao) => opcao.value === ordem)
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            type="button"
-            variant="outline"
-            aria-label={`Ordenar por ${opcaoAtual?.label ?? campo}`}
-          />
-        }
-      >
-        {crescente ? (
-          <ArrowUpIcon data-icon="inline-start" />
-        ) : (
-          <ArrowDownIcon data-icon="inline-start" />
-        )}
-        <span className="hidden sm:inline">Ordenar: </span>
-        {/* Reserva a largura do maior rótulo para o botão não mudar de tamanho. */}
-        <span className="grid text-left">
-          <span className="invisible col-start-1 row-start-1" aria-hidden>
-            Nome
-          </span>
-          <span className="invisible col-start-1 row-start-1" aria-hidden>
-            Data
-          </span>
-          <span className="col-start-1 row-start-1">{campo}</span>
-        </span>
-        <ChevronDownIcon
-          data-icon="inline-end"
-          className="text-muted-foreground"
-        />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="center" className="w-60">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-          <DropdownMenuRadioGroup
-            value={ordem}
-            onValueChange={(value) => onOrdemChange(value as OrdemExplorer)}
-          >
-            {opcoesOrdem.map((opcao) => (
-              <DropdownMenuRadioItem key={opcao.value} value={opcao.value}>
-                {opcao.label}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
   )
 }
 

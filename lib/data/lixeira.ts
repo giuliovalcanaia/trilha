@@ -1,15 +1,5 @@
+import type { ItemLixeira } from "@/lib/dominio/lixeira"
 import type { SupabaseClient } from "@/lib/supabase/server"
-
-export type TrashGroup = {
-  trashId: string
-  tipo: "pasta" | "atividade"
-  id: number
-  nome: string
-  deletedAt: string
-  pastaCount: number
-  atividadeCount: number
-  origem: string
-}
 
 type PastaTrashRow = {
   id: number
@@ -33,7 +23,7 @@ type AtividadeTrashRow = {
  */
 export async function loadTrash(
   supabase: SupabaseClient
-): Promise<TrashGroup[]> {
+): Promise<ItemLixeira[]> {
   const [
     { data: pastas, error: pastasError },
     { data: atividades, error: atividadesError },
@@ -73,7 +63,7 @@ export async function loadTrash(
     ...pastasPorTrash.keys(),
     ...atividadesPorTrash.keys(),
   ])
-  const grupos: TrashGroup[] = []
+  const grupos: ItemLixeira[] = []
 
   for (const trashId of trashIds) {
     const pastasDoGrupo = pastasPorTrash.get(trashId) ?? []

@@ -12,7 +12,6 @@ import {
   FolderInputIcon,
   FolderPlusIcon,
   LoaderCircleIcon,
-  MoreHorizontalIcon,
   PencilIcon,
   PlusIcon,
   Share2Icon,
@@ -26,18 +25,11 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { ItemDropdown } from "@/components/painel/item-dropdown"
 import {
   ContextMenuActions,
-  DropdownMenuActions,
   type MenuAction,
-} from "@/components/painel/explorer/explorer-menu"
+} from "@/components/painel/item-menu"
 import {
   isPasta,
   type ExplorerItem,
@@ -409,28 +401,5 @@ export function ExplorerItemView({
         </ContextMenuGroup>
       </ContextMenuContent>
     </ContextMenu>
-  )
-}
-
-function ItemDropdown({ actions }: { actions: MenuAction[] }) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Abrir menu de ações"
-          />
-        }
-      >
-        <MoreHorizontalIcon />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-60">
-        <DropdownMenuGroup>
-          <DropdownMenuActions actions={actions} />
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
   )
 }
