@@ -36,6 +36,7 @@ export const ERROS = {
   TRL29: "Não foi possível organizar os links.",
   TRL30: "Direção inválida.",
   TRL31: "Não foi possível gerar o código de entrada.",
+  TRL32: "Muitas tentativas de senha. Aguarde um minuto e tente de novo.",
 } as const
 
 export type CodigoErro = keyof typeof ERROS

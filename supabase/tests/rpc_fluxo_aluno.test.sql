@@ -6,7 +6,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path to public, extensions;
 
-select plan(21);
+select plan(31);
 
 insert into auth.users (id, email, is_anonymous) values
   ('00000000-0000-0000-0000-0000000000a1', 'prof-a@trilha.test', false),
@@ -127,18 +127,28 @@ select is(
   'abrir o link marca o progresso como fazendo'
 );
 
--- Senha errada: não conclui e não grava a nota informada junto.
-select throws_ok(
-  format(
-    'select public.complete_link(%s, %s, %L, %s)',
-    :aplicacao_id,
-    :link_1,
-    'senha-errada',
-    10
-  ),
-  'TRL16',
+-- Senha errada: volta como payload (não como exceção) para a tentativa
+-- sobreviver à transação, não conclui e não grava a nota informada junto.
+select is(
+  (
+    public.complete_link(:aplicacao_id, :link_1, 'senha-errada', 10)
+  )->>'error',
   'invalid_password',
   'complete_link recusa a senha errada'
+);
+
+select is(
+  (
+    public.complete_link(:aplicacao_id, :link_1, 'senha-errada', null)
+  )->>'tentativas_restantes',
+  '3',
+  'a recusa informa quantas tentativas restam'
+);
+
+select is(
+  (select tentativas_senha from public.participacoes),
+  2,
+  'os erros de senha ficam gravados na participação'
 );
 
 select is(
@@ -268,6 +278,91 @@ select is(
   (select count(*) from public.progresso_estudante where status = 'aberta'),
   1::bigint,
   'ao voltar, o aluno recomeça com apenas o primeiro link aberto'
+);
+
+-- Rate limit: cinco erros seguidos bloqueiam por 60 segundos.
+select is(
+  (
+    select array_agg((public.complete_link(:aplicacao_id, :link_1, 'errada', null))->>'error')
+    from generate_series(1, 4)
+  ),
+  array[
+    'invalid_password',
+    'invalid_password',
+    'invalid_password',
+    'invalid_password'
+  ],
+  'quatro tentativas erradas ainda não bloqueiam'
+);
+
+select is(
+  (
+    public.complete_link(:aplicacao_id, :link_1, 'errada', null)
+  )->>'error',
+  'password_locked',
+  'a quinta tentativa errada bloqueia a participação'
+);
+
+select ok(
+  (select bloqueado_ate > now() from public.participacoes),
+  'a participação guarda até quando fica bloqueada'
+);
+
+select is(
+  (
+    public.complete_link(:aplicacao_id, :link_1, 'aula123', null)
+  )->>'error',
+  'password_locked',
+  'durante o bloqueio nem a senha correta passa'
+);
+
+select is(
+  (
+    select pe.status
+    from public.progresso_estudante pe
+    where pe.link_id = :link_1
+  ),
+  'aberta',
+  'o bloqueio não altera o progresso'
+);
+
+-- Simula o fim do bloqueio (não dá para esperar 60s dentro do teste).
+reset role;
+update public.participacoes
+set bloqueado_ate = now() - interval '1 second'
+where id = :participacao_id;
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-0000000000c3","role":"authenticated"}',
+  true
+);
+
+select ok(
+  (public.complete_link(:aplicacao_id, :link_1, 'aula123', null))->>'ok'
+    = 'true',
+  'depois do bloqueio, a senha correta conclui o link'
+);
+
+select is(
+  (
+    select tentativas_senha
+    from public.participacoes
+    where id = :participacao_id
+  ),
+  0,
+  'o acerto zera o contador de tentativas'
+);
+
+select is(
+  (
+    select bloqueado_ate
+    from public.participacoes
+    where id = :participacao_id
+  ),
+  null::timestamptz,
+  'o acerto limpa o bloqueio'
 );
 
 -- Atividade encerrada.

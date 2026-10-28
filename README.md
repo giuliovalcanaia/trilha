@@ -149,6 +149,18 @@ supabase/
 - Server Actions validam a sessão e os dados; a RLS é a última linha de defesa.
 - Senha de liberação com **bcrypt**; a versão em texto fica visível apenas para
   o dono da atividade, para consulta no painel.
+- **Rate limit da senha** no banco: 5 erros seguidos bloqueiam aquela
+  participação por 60 segundos, inclusive para a senha correta. O bloqueio de
+  3 s no cartão do aluno é só feedback visual — quem manda é o `complete_link`.
+
+### Limites de uso do Supabase
+
+- **Login anônimo do aluno**: o Supabase limita 30 cadastros anônimos por hora
+  por IP. Uma turma inteira no mesmo Wi-Fi estoura esse limite — suba em
+  *Authentication → Rate Limits* no dashboard do projeto (o limite não é
+  configurável por arquivo).
+- **Realtime**: as tabelas usadas pela tela do aluno (`progresso_estudante`,
+  `aplicacoes`, `participacoes`) estão na publication `supabase_realtime`.
 - `complete_link` valida a senha antes de gravar qualquer progresso.
 - Sessão do professor expira **24 horas** após o início.
 - A pré-visualização de links no servidor bloqueia hosts privados e tem limites
@@ -158,14 +170,11 @@ supabase/
 
 Projeto em desenvolvimento, usado como estudo de caso de Next.js + Supabase.
 
-Próximos passos planejados:
-
-- [ ] Dividir `app/painel/actions.ts` por domínio
-- [ ] Validação de formulários com zod e erros tipados
-- [ ] Testes de RLS com pgTAP, testes unitários com Vitest e um fluxo E2E com
+- [x] Server actions por domínio, com validação zod e erros de negócio tipados
+- [x] Testes de RLS/RPCs com pgTAP, unidade com Vitest e um fluxo E2E com
       Playwright
-- [ ] CI no GitHub Actions (lint, typecheck, testes e build)
-- [ ] Rate limit server-side na senha da atividade
+- [x] CI no GitHub Actions (formatação, lint, tipos, testes, banco e E2E)
+- [x] Rate limit server-side na senha da atividade
 - [ ] Headers de segurança e `robots.ts`
 - [ ] Screenshots e GIF no README
 
