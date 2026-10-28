@@ -23,6 +23,9 @@ updates:
       # cn 0.4+ exige Node >= 22; o projeto declara engines.node >= 20.
       - dependency-name: "cn"
         versions: [">=0.4.0"]
+      # TypeScript 7 (reescrita nativa) quebra o build do Next 16.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     groups:
       # Minor/patch juntos em um PR só; majors continuam individuais.
       npm-menores:
