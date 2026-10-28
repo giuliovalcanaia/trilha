@@ -157,30 +157,36 @@ export type Database = {
       participacoes: {
         Row: {
           aplicacao_id: number
+          bloqueado_ate: string | null
           concluido_em: string | null
           estudante_id: number
           expulso_em: string | null
           id: number
           iniciado_em: string
           nome: string
+          tentativas_senha: number
         }
         Insert: {
           aplicacao_id: number
+          bloqueado_ate?: string | null
           concluido_em?: string | null
           estudante_id: number
           expulso_em?: string | null
           id?: number
           iniciado_em?: string
           nome: string
+          tentativas_senha?: number
         }
         Update: {
           aplicacao_id?: number
+          bloqueado_ate?: string | null
           concluido_em?: string | null
           estudante_id?: number
           expulso_em?: string | null
           id?: number
           iniciado_em?: string
           nome?: string
+          tentativas_senha?: number
         }
         Relationships: [
           {
