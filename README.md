@@ -2,22 +2,51 @@
 
 [![CI](https://github.com/giuliovalcanaia/trilha/actions/workflows/ci.yml/badge.svg)](https://github.com/giuliovalcanaia/trilha/actions/workflows/ci.yml)
 
-Plataforma para montar atividades em sequência e acompanhar o progresso dos
-alunos em tempo real.
+Ferramenta para o professor de inglês montar atividades em sequência —
+uma **trilha** de links — e acompanhar em tempo real em qual etapa cada aluno
+está.
 
-O professor organiza as atividades em pastas, compartilha um código de entrada e
-acompanha em qual etapa cada aluno está. O aluno entra sem conta: digita o nome,
-percorre os links na ordem definida e libera cada etapa com a senha da atividade.
+O aluno não cria conta: digita o código da turma, coloca o nome e percorre os
+links na ordem definida. Cada etapa é liberada com a senha da atividade, e a
+nota é opcional. O professor organiza tudo em pastas, consulta o código de
+entrada e vê o progresso (e as notas) sem recarregar a página.
+
+**Por que existe:** nasceu de aulas de conversação em que as tarefas ficavam
+espalhadas entre PDF, WhatsApp e planilha. O Trilha junta a sequência de links,
+a senha de liberação e o acompanhamento em um só lugar, sem exigir cadastro de
+alunos menores de idade.
+
+Não há demo pública: as imagens abaixo vêm de um cenário de demonstração
+(`npm run docs:images`) e o app roda localmente em poucos minutos.
+
+## Capturas
+
+**Fluxo do aluno** — abre o link, erra a senha (o servidor conta as tentativas),
+acerta e libera a próxima etapa:
+
+![Fluxo do aluno](docs/images/fluxo-aluno.gif)
+
+**Acompanhamento em tempo real** — a lista de alunos se atualiza sozinha quando
+o aluno conclui uma etapa, com status e nota por link:
+
+![Acompanhamento em tempo real](docs/images/tempo-real.gif)
+
+| Explorador de pastas | Editor da atividade |
+| --- | --- |
+| ![Explorador](docs/images/explorador.png) | ![Editor](docs/images/atividade-editor.png) |
+| **Acompanhamento dos alunos** | **Visão do aluno** |
+| ![Alunos](docs/images/alunos.png) | ![Aluno](docs/images/aluno.png) |
 
 ## Funcionalidades
 
 - **Explorador de atividades e pastas** com árvore na sidebar, busca global,
-  seleção múltipla, arrastar e soltar, renomear, mover e duplicar.
+  seleção múltipla, arrastar e soltar, renomear, mover e duplicar. A troca de
+  pasta é instantânea (o dataset é carregado uma vez por entrada no painel).
 - **Editor de atividade** com links em sequência, senha de liberação, ordem dos
   links e opção de embaralhar a ordem por aluno.
 - **Código de entrada** por atividade, com encerramento e reabertura.
 - **Área do aluno** sem cadastro, com progresso por link, nota opcional e
-  liberação por senha.
+  liberação por senha — com rate limit no servidor.
 - **Acompanhamento em tempo real** dos alunos e do progresso via Supabase
   Realtime.
 - **Lixeira reversível** com restauração e exclusão definitiva.
@@ -34,6 +63,7 @@ percorre os links na ordem definida e libera cada etapa com a senha da atividade
 - [Supabase](https://supabase.com): Auth (professor por e-mail/senha e aluno
   anônimo), Postgres com RLS e Realtime
 - TypeScript estrito, ESLint e Prettier
+- Testes com Vitest, pgTAP e Playwright; CI no GitHub Actions
 
 ## Como rodar localmente
 
@@ -91,6 +121,7 @@ O `supabase/seed.sql` cria dados de teste no ambiente local:
 | `npm run db:reset` | Recria o banco local com migrations + seed |
 | `npm run db:test` | Testes de RLS e RPCs no banco (pgTAP) |
 | `npm run db:lint` | Procura erros de schema/funções no banco local |
+| `npm run docs:images` | Regenera as capturas de `docs/images` |
 
 ## Testes
 
@@ -99,44 +130,55 @@ O `supabase/seed.sql` cria dados de teste no ambiente local:
   (incluindo o bloqueio de hosts privados).
 - **Banco** (`npm run db:test`): pgTAP cobrindo a matriz de RLS (isolamento por
   professor e por aluno, compartilhamento de pastas) e o fluxo do aluno nas
-  RPCs (entrada, conclusão com senha, expulsão e retorno).
+  RPCs (entrada, conclusão com senha, rate limit, expulsão e retorno).
 - **Ponta a ponta** (`npm run test:e2e`): um fluxo real no navegador —
   professor cria a atividade, aluno entra com o código e conclui, professor
   acompanha e encerra. Sobe o app e reseta o banco automaticamente.
 
 O `npm run test:e2e` precisa do stack local no ar (`npx supabase start`).
 
-## Estrutura
+## Arquitetura
 
+```mermaid
+flowchart LR
+  B[Navegador] -->|RSC / Server Actions| N[Next.js]
+  B <-->|Realtime| RT[Supabase Realtime]
+  N -->|supabase-js| P[PostgREST]
+  P --> D[(Postgres + RLS)]
+  RT --> D
 ```
-app/                     rotas (App Router)
-  aluno/                 entrada do aluno
-  atividade/             visão do aluno
-  painel/                área do professor
-    actions/             server actions por domínio
-  previa/                pré-visualização da atividade
-components/
-  aluno/                 componentes da área do aluno
-  auth/                  login, cadastro e shell de autenticação
-  layout/                sidebar, navegação, tema
-  painel/                componentes do painel
-  ui/                    componentes gerados pelo shadcn/ui
-e2e/                     fluxo Playwright
-hooks/                   hooks reutilizáveis
-lib/
-  actions/               helpers das server actions (auth + zod + erros)
-  auth/                  sessão de professor e de aluno
-  data/                  leituras tipadas do banco
-  dominio/               regras puras (links, notas, pastas, seleção)
-  painel/                operações do painel
-  supabase/              clientes browser/server e tipos do banco
-  env.ts                 validação das variáveis de ambiente
-  format.ts              formatação de datas
-supabase/
-  migrations/            schema, RLS e funções
-  tests/                 pgTAP (RLS e RPCs)
-  seed.sql               dados de teste
-```
+
+- **Server Components leem, Server Actions escrevem.** Não existe API própria:
+  a sessão vem dos cookies (`@supabase/ssr`), as actions validam com zod e
+  devolvem um `ActionResult` tipado.
+- **A RLS é a fronteira.** Nenhuma tela decide sozinha o que pode ser lido: as
+  policies do Postgres checam dono/participação em cada linha.
+- **Regras puras isoladas** em `lib/dominio/`, leituras tipadas em `lib/data/`,
+  escritas por domínio em `app/*/actions/`.
+
+Rotas, fluxo de uma escrita, helpers de autorização e o que é gerado por
+ferramenta estão em [docs/architecture.md](docs/architecture.md).
+
+## Decisões e trade-offs
+
+- **Uma entrada por atividade.** A atividade nasce ativa e cria uma linha em
+  `aplicacoes` com `turma_id = null` guardando o código. `turmas` existe para
+  uma versão futura, mas nada usa hoje — preferi não inventar multi-turma antes
+  de precisar.
+- **Soft delete** (`deleted_at` + `trash_id`) em pastas e atividades, com
+  lixeira, restauração e exclusão definitiva via RPC. Excluir uma pasta leva o
+  conteúdo junto, mas nada some por engano.
+- **Aluno anônimo** em vez de cadastro: menos atrito na aula e nenhum dado
+  pessoal de menor de idade. O preço é que o progresso vive na sessão daquele
+  navegador (expulsar + entrar de novo é o reset).
+- **Senha da atividade** com bcrypt para validar e uma cópia em texto para o
+  professor consultar. É um trade-off consciente: guardar só o hash obrigaria a
+  redefinir a senha a cada esquecimento.
+- **Rate limit no banco, não no cliente.** Senha errada e bloqueio voltam como
+  payload porque uma exceção desfaria a transação e o contador de tentativas se
+  perderia.
+- **Navegação instantânea no explorador**: o painel carrega pastas e atividades
+  uma vez e troca de pasta com History API, sem skeleton e sem ida ao servidor.
 
 ## Segurança
 
@@ -243,17 +285,57 @@ como ela é verificada.
   uma turma inteira no mesmo Wi-Fi, suba em *Authentication → Rate Limits* (não
   é configurável por arquivo).
 
-## Status e próximos passos
+## Estrutura
 
-Projeto em desenvolvimento, usado como estudo de caso de Next.js + Supabase.
+```
+app/                     rotas (App Router)
+  aluno/                 entrada do aluno
+  atividade/             visão do aluno
+  painel/                área do professor
+    actions/             server actions por domínio
+  previa/                pré-visualização da atividade
+components/
+  aluno/                 componentes da área do aluno
+  auth/                  login, cadastro e shell de autenticação
+  layout/                sidebar, navegação, tema
+  painel/                componentes do painel
+  ui/                    componentes gerados pelo shadcn/ui
+docs/
+  architecture.md        rotas, fluxo de dados, RLS e decisões
+  images/                capturas geradas por `npm run docs:images`
+e2e/                     fluxo Playwright
+hooks/                   hooks reutilizáveis
+lib/
+  actions/               helpers das server actions (auth + zod + erros)
+  auth/                  sessão de professor e de aluno
+  data/                  leituras tipadas do banco
+  dominio/               regras puras (links, notas, pastas, seleção)
+  painel/                operações do painel
+  supabase/              clientes browser/server e tipos do banco
+  env.ts                 validação das variáveis de ambiente
+  format.ts              formatação de datas
+scripts/
+  demo.sql               cenário usado nas capturas (não roda no db reset)
+  capturas.mjs           gera PNG/GIF de docs/images
+supabase/
+  migrations/            schema, RLS e funções
+  tests/                 pgTAP (RLS e RPCs)
+  seed.sql               dados de teste
+```
 
-- [x] Server actions por domínio, com validação zod e erros de negócio tipados
-- [x] Testes de RLS/RPCs com pgTAP, unidade com Vitest e um fluxo E2E com
-      Playwright
-- [x] CI no GitHub Actions (formatação, lint, tipos, testes, banco e E2E)
-- [x] Rate limit server-side na senha da atividade
-- [x] Headers de segurança e `robots.ts`
-- [ ] Screenshots e GIF no README
+## Roadmap
+
+O que eu faria em seguida, em ordem de valor:
+
+- **Relatório da turma**: exportar CSV com progresso e notas por atividade.
+- **Retenção**: rotina para arquivar participações de semestres anteriores — o
+  histórico hoje fica para sempre.
+- **Multi-professor por escola (multi-tenant)**: `turmas` já está no schema
+  esperando esse desenho.
+- **Realtime com filtro por atividade** e presença (quem está online agora).
+- **Cache e streaming nas rotas do painel**, com `Suspense` por seção quando o
+  volume de atividades crescer.
+- **PWA/offline** para aulas com internet instável.
 
 ## Licença
 
