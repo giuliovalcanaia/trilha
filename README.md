@@ -140,44 +140,108 @@ supabase/
 
 ## Segurança
 
-- **RLS em todas as tabelas públicas**: o isolamento por professor e por aluno
-  é aplicado no banco, não só na interface.
-- Helpers de autorização no schema `private`, com `security definer` e
-  `search_path = ''`.
-- **Aluno anônimo** via Supabase Anonymous Sign-Ins; o progresso é vinculado à
-  participação daquele aluno naquela entrada.
-- Server Actions validam a sessão e os dados; a RLS é a última linha de defesa.
-- Senha de liberação com **bcrypt**; a versão em texto fica visível apenas para
-  o dono da atividade, para consulta no painel.
-- **Rate limit da senha** no banco: 5 erros seguidos bloqueiam aquela
-  participação por 60 segundos, inclusive para a senha correta. O bloqueio de
-  3 s no cartão do aluno é só feedback visual — quem manda é o `complete_link`.
+O isolamento mora no banco: a interface esconde o que o usuário não pode fazer,
+mas quem decide é a RLS e as funções `security definer`. Abaixo, cada peça e
+como ela é verificada.
 
-### Limites de uso do Supabase
+### Isolamento por linha (RLS)
 
-- **Login anônimo do aluno**: o Supabase limita 30 cadastros anônimos por hora
-  por IP. Uma turma inteira no mesmo Wi-Fi estoura esse limite — suba em
-  *Authentication → Rate Limits* no dashboard do projeto (o limite não é
-  configurável por arquivo).
-- **Realtime**: as tabelas usadas pela tela do aluno (`progresso_estudante`,
-  `aplicacoes`, `participacoes`) estão na publication `supabase_realtime`.
-- `complete_link` valida a senha antes de gravar qualquer progresso.
-- Sessão do professor expira **24 horas** após o início.
-- A pré-visualização de links no servidor bloqueia hosts privados e tem limites
-  de tempo, tamanho e redirecionamentos (mitigação de SSRF).
+- **RLS em todas as tabelas públicas.** O professor vê as próprias pastas,
+  atividades e alunos; o aluno vê apenas a própria participação e o próprio
+  progresso. Nenhuma policy libera `select` sem uma condição de dono ou de
+  participação.
+- **Helpers de autorização no schema `private`**
+  (`current_professor_id`, `professor_acessa_atividade`,
+  `estudante_participa_*`), todos `security definer` com `search_path = ''`.
+  Além de centralizar a regra, eles existem para evitar **recursão de RLS**:
+  as policies de `atividades`, `aplicacoes`, `participacoes` e
+  `progresso_estudante` chamam o helper em vez de fazer join entre si.
+- **Compartilhamento de pastas** estende o acesso (e a edição) ao colaborador,
+  mas a raiz compartilhada não pode ser movida nem excluída por quem recebeu o
+  acesso — o `pastas_guard` responde `TRL22`.
+
+### Aluno anônimo
+
+- O aluno entra por **Supabase Anonymous Sign-Ins**: recebe um usuário `auth`
+  anônimo, sem e-mail nem senha, e o progresso fica preso à participação dele
+  naquela entrada. A tela do aluno escuta Realtime, que também passa pela RLS.
+- Limites conscientes do modelo: quem tem o código entra; o nome é
+  auto-declarado; e a sessão anônima não expira — expulsar e entrar de novo é o
+  caminho de reset. Um novo login anônimo em outro navegador gera outra
+  participação, com progresso zerado.
+
+### Senha da atividade
+
+- Guardada como **bcrypt** (`extensions.crypt` com `gen_salt('bf')`) e validada
+  dentro do `complete_link`, no banco — nunca no cliente. A tentativa errada não
+  grava nada: a senha é conferida antes da nota e do status.
+- Existe também em texto (`atividade_senhas.senha_texto`) por um **trade-off
+  consciente**: o professor precisa consultar a senha na aba Configurações e
+  ditá-la para a turma; guardar só o hash obrigaria a redefini-la a cada
+  esquecimento. A policy filtra por `private.professor_acessa_atividade`, então
+  o texto é legível por professores com acesso à atividade (dono ou colaborador
+  da pasta) e nunca pelo aluno.
+
+### Rate limit do `complete_link`
+
+- **5 erros seguidos bloqueiam a participação por 60 segundos**, inclusive para
+  a senha correta; o acerto zera contador e bloqueio. O estado fica no banco
+  (`participacoes.tentativas_senha` e `bloqueado_ate`), não no navegador — a
+  validação no cliente é só feedback.
+- Detalhe de implementação: senha errada e bloqueio voltam como **payload**
+  (`{ ok: false, error }`) em vez de exceção, porque uma exceção desfaria a
+  transação do RPC e o incremento do contador se perderia.
+
+### Sessão do professor
+
+- O login expira **24 horas após o início** (contagem fixa, não por
+  inatividade). O `proxy.ts` compara `now()` com `session_started_at()` — RPC
+  que lê `auth.sessions.created_at` da própria sessão — em `/painel*` e
+  `/previa*`; ao expirar, faz `signOut`, apaga os cookies `sb-*` e redireciona
+  para `/login?expirado=1`. Se a RPC falhar, o comportamento é fail-open.
+
+### SSRF na pré-visualização de links
+
+- `lib/link-preview.ts` roda no servidor e recusa hosts privados (localhost,
+  `*.local`, `.internal`, IPv6 literal, 0/10/127/169.254/172.16–31/192.168/
+  100.64–127/198.18–19), inclusive **depois de redirecionamentos**.
+- Tem limite de 6 s por requisição, 512 KB de leitura, 4 redirecionamentos e só
+  aceita `http(s)` com `text/html`.
+
+### Superfície
+
+- **Server Actions + RLS como fronteira.** Nenhuma chave privilegiada no
+  cliente: só a publishable key, que é pública por definição. O app não usa
+  `service_role`; toda escrita passa por server action (sessão validada + zod)
+  ou por RPC que confere dono/participação.
 - **Cabeçalhos de segurança** em todas as respostas (`next.config.ts`):
   `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options: DENY`,
   `Content-Security-Policy: frame-ancestors 'none'`, `Permissions-Policy` e
-  `Strict-Transport-Security` (só em produção). `X-Powered-By` desligado.
+  `Strict-Transport-Security` (só em produção, para não travar o dev em http).
+  `X-Powered-By` desligado.
 - **`app/robots.ts`** mantém crawlers fora de `/painel`, `/atividade`, `/aluno`,
   `/previa`, `/login`, `/signup` e `/auth`.
 - **Dependências**: `npm audit --omit=dev` sem vulnerabilidades; o Dependabot
-  roda semanalmente (`.github/dependabot.yml`), agrupando minor/patch.
-- **Advisors do Supabase** rodados no projeto de produção: os avisos que restam
-  são intencionais (as RPCs `security definer` são a API do app, aluno anônimo é
+  roda semanalmente (`.github/dependabot.yml`).
+
+### Como isso é verificado
+
+- **pgTAP** (`npm run db:test`, 70 asserções em `supabase/tests/`): isolamento
+  entre professores, compartilhamento de pastas, visão do aluno, senha,
+  rate limit, expulsão e retorno.
+- **Vitest** (`npm test`): inclui a matriz de hosts privados do
+  `link-preview` e os formatadores.
+- **Playwright** (`npm run test:e2e`): fluxo completo no navegador.
+- **CI** roda tudo isso a cada push (`.github/workflows/ci.yml`), mais
+  `supabase db lint` e a cobertura mínima.
+- Os **advisors** do Supabase foram rodados no projeto de produção: os avisos
+  restantes são intencionais (RPCs `security definer` são a API, aluno anônimo é
   o modelo de uso e `pasta_compartilhamentos` sem policy significa acesso só por
-  RPC). Fica recomendado ligar a *leaked password protection* no dashboard
-  (Authentication → Password security).
+  RPC). Fica recomendado ligar a *leaked password protection* em
+  *Authentication → Password security*.
+- **Limite de sign-in anônimo**: o padrão do Supabase é 30 por hora por IP. Para
+  uma turma inteira no mesmo Wi-Fi, suba em *Authentication → Rate Limits* (não
+  é configurável por arquivo).
 
 ## Status e próximos passos
 
@@ -188,7 +252,7 @@ Projeto em desenvolvimento, usado como estudo de caso de Next.js + Supabase.
       Playwright
 - [x] CI no GitHub Actions (formatação, lint, tipos, testes, banco e E2E)
 - [x] Rate limit server-side na senha da atividade
-- [ ] Headers de segurança e `robots.ts`
+- [x] Headers de segurança e `robots.ts`
 - [ ] Screenshots e GIF no README
 
 ## Licença
