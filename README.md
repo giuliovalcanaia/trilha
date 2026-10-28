@@ -165,6 +165,19 @@ supabase/
 - Sessão do professor expira **24 horas** após o início.
 - A pré-visualização de links no servidor bloqueia hosts privados e tem limites
   de tempo, tamanho e redirecionamentos (mitigação de SSRF).
+- **Cabeçalhos de segurança** em todas as respostas (`next.config.ts`):
+  `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options: DENY`,
+  `Content-Security-Policy: frame-ancestors 'none'`, `Permissions-Policy` e
+  `Strict-Transport-Security` (só em produção). `X-Powered-By` desligado.
+- **`app/robots.ts`** mantém crawlers fora de `/painel`, `/atividade`, `/aluno`,
+  `/previa`, `/login`, `/signup` e `/auth`.
+- **Dependências**: `npm audit --omit=dev` sem vulnerabilidades; o Dependabot
+  roda semanalmente (`.github/dependabot.yml`), agrupando minor/patch.
+- **Advisors do Supabase** rodados no projeto de produção: os avisos que restam
+  são intencionais (as RPCs `security definer` são a API do app, aluno anônimo é
+  o modelo de uso e `pasta_compartilhamentos` sem policy significa acesso só por
+  RPC). Fica recomendado ligar a *leaked password protection* no dashboard
+  (Authentication → Password security).
 
 ## Status e próximos passos
 
