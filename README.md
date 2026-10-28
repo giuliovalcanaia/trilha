@@ -10,16 +10,21 @@ por vez, enquanto ele acompanha o progresso em tempo real.
 que se encontram na internet costumam durar 5 ou 10 minutos. Terminada uma, o
 aluno para e espera o professor ir até a máquina colar o próximo link — a aula
 vira uma fila de recados. O Trilha resolve isso: o professor deixa a lista
-inteira pronta antes da aula, cada etapa é liberada com a senha que ele combina
-com a turma (opcionalmente com uma nota) e o aluno só avança quando conclui a
-anterior. Assim ele tem autonomia para puxar a próxima atividade enquanto o
-professor revisa e libera o que já foi entregue.
+inteira pronta antes da aula e o aluno tem a próxima etapa já na tela, mas quem
+libera é o professor. Ele passa de máquina em máquina, confere a nota registrada
+e digita a senha da atividade para concluir o link e abrir o seguinte — ou faz a
+mesma liberação da aba **Alunos**, quando prefere corrigir do próprio
+computador. A senha é do professor, não da turma: ninguém avança sem essa
+conferência, e o resultado fica registrado no painel em vez de depender de
+recado.
 
 O aluno não cria conta: digita o código da turma, coloca o nome e percorre os
-links na ordem definida. Cada etapa é liberada com a senha da atividade, e a
-nota é opcional. O professor organiza tudo em pastas, consulta o código de
-entrada e vê o progresso (e as notas) sem recarregar a página — e pode corrigir
-status e nota de qualquer aluno pelo painel.
+links na ordem definida. Ao terminar uma etapa ele registra a nota (opcional) e
+espera a liberação do professor, que pode acontecer de dois jeitos: na máquina
+do aluno, digitando a senha, ou direto na aba **Alunos** do painel. O professor
+organiza tudo em pastas, consulta o código de entrada e vê o progresso (e as
+notas) sem recarregar a página — e pode corrigir status e nota de qualquer
+aluno, o que também libera a próxima etapa.
 
 Funciona para qualquer disciplina; o cenário de exemplo do repositório é de
 inglês. Não há demo pública: as imagens abaixo vêm desse cenário
@@ -27,8 +32,9 @@ inglês. Não há demo pública: as imagens abaixo vêm desse cenário
 
 ## Capturas
 
-**Fluxo do aluno** — abre o link, erra a senha (o servidor conta as tentativas),
-acerta e libera a próxima etapa:
+**Fluxo do aluno** — abre o link, erra a senha (o servidor conta as
+tentativas) e, na passada do professor, a etapa é concluída e a próxima
+liberada:
 
 ![Fluxo do aluno](docs/images/fluxo-aluno.gif)
 
@@ -52,8 +58,10 @@ o aluno conclui uma etapa, com status e nota por link:
   links e opção de embaralhar a ordem por aluno.
 - **Código de entrada** por atividade, com encerramento e reabertura.
 - **Área do aluno** sem cadastro, com progresso por link, nota opcional e
-  liberação por senha — com rate limit no servidor. O aluno puxa a próxima
-  etapa sozinho, sem o professor precisar colar link.
+  liberação controlada pelo professor — com rate limit no servidor. A próxima
+  etapa já está na tela: acaba a fila de colar link, mas a liberação continua
+  passando pela conferência, seja com a senha digitada na máquina do aluno, seja
+  pela aba **Alunos** do painel.
 - **Acompanhamento em tempo real** dos alunos e do progresso via Supabase
   Realtime, com correção de status e nota que também libera a próxima etapa.
 - **Lixeira reversível** com restauração e exclusão definitiva.
@@ -179,8 +187,10 @@ ferramenta estão em [docs/architecture.md](docs/architecture.md).
   pessoal de menor de idade. O preço é que o progresso vive na sessão daquele
   navegador (expulsar + entrar de novo é o reset).
 - **Senha da atividade** com bcrypt para validar e uma cópia em texto para o
-  professor consultar. É um trade-off consciente: guardar só o hash obrigaria a
-  redefinir a senha a cada esquecimento.
+  professor consultar no painel. É um trade-off consciente: a senha é
+  operacional — o professor a digita em cada máquina para liberar a etapa
+  seguinte —, então ele precisa poder relê-la; guardar só o hash obrigaria a
+  redefini-la a cada esquecimento.
 - **Rate limit no banco, não no cliente.** Senha errada e bloqueio voltam como
   payload porque uma exceção desfaria a transação e o contador de tentativas se
   perderia.
@@ -225,11 +235,11 @@ como ela é verificada.
   dentro do `complete_link`, no banco — nunca no cliente. A tentativa errada não
   grava nada: a senha é conferida antes da nota e do status.
 - Existe também em texto (`atividade_senhas.senha_texto`) por um **trade-off
-  consciente**: o professor precisa consultar a senha na aba Configurações e
-  ditá-la para a turma; guardar só o hash obrigaria a redefini-la a cada
-  esquecimento. A policy filtra por `private.professor_acessa_atividade`, então
-  o texto é legível por professores com acesso à atividade (dono ou colaborador
-  da pasta) e nunca pelo aluno.
+  consciente**: a senha não é distribuída à turma, é o professor quem a digita
+  em cada máquina depois de conferir a nota; poder consultá-la na aba
+  Configurações evita redefini-la a cada esquecimento. A policy filtra por
+  `private.professor_acessa_atividade`, então o texto é legível por professores
+  com acesso à atividade (dono ou colaborador da pasta) e nunca pelo aluno.
 
 ### Rate limit do `complete_link`
 
