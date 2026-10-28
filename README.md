@@ -330,20 +330,6 @@ supabase/
   seed.sql               dados de teste
 ```
 
-## Roadmap
-
-O que eu faria em seguida, em ordem de valor:
-
-- **Relatório da turma**: exportar CSV com progresso e notas por atividade.
-- **Retenção**: rotina para arquivar participações de semestres anteriores — o
-  histórico hoje fica para sempre.
-- **Multi-professor por escola (multi-tenant)**: `turmas` já está no schema
-  esperando esse desenho.
-- **Realtime com filtro por atividade** e presença (quem está online agora).
-- **Cache e streaming nas rotas do painel**, com `Suspense` por seção quando o
-  volume de atividades crescer.
-- **PWA/offline** para aulas com internet instável.
-
 ## Licença
 
 MIT.
