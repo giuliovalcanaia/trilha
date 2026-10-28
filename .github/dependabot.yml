@@ -6,6 +6,20 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    # Majors que quebram o projeto de propósito. Atualizar exige uma decisão
+    # junto (não é só trocar a versão):
+    #   eslint 10  → eslint-config-next ainda não suporta (ver AGENTS.md)
+    #   vitest 5   → exige @types/node 22+, e o projeto mantém o piso Node 20
+    #   @types/node 21+ → subiria o piso de tipos acima do Node 20 suportado
+    ignore:
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vitest"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitest/coverage-v8"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       # Minor/patch juntos em um PR só; majors continuam individuais.
       npm-menores:
