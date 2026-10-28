@@ -2,21 +2,27 @@
 
 [![CI](https://github.com/giuliovalcanaia/trilha/actions/workflows/ci.yml/badge.svg)](https://github.com/giuliovalcanaia/trilha/actions/workflows/ci.yml)
 
-Ferramenta para o professor de inglês montar atividades em sequência —
-uma **trilha** de links — e acompanhar em tempo real em qual etapa cada aluno
-está.
+Ferramenta de apoio à sala de aula: o professor monta uma sequência de
+atividades — uma **trilha** de links — e os alunos avançam sozinhos, uma etapa
+por vez, enquanto ele acompanha o progresso em tempo real.
+
+**Por que existe:** em aula no laboratório de informática, as atividades prontas
+que se encontram na internet costumam durar 5 ou 10 minutos. Terminada uma, o
+aluno para e espera o professor ir até a máquina colar o próximo link — a aula
+vira uma fila de recados. O Trilha resolve isso: o professor deixa a lista
+inteira pronta antes da aula, cada etapa é liberada com a senha que ele combina
+com a turma (opcionalmente com uma nota) e o aluno só avança quando conclui a
+anterior. Assim ele tem autonomia para puxar a próxima atividade enquanto o
+professor revisa e libera o que já foi entregue.
 
 O aluno não cria conta: digita o código da turma, coloca o nome e percorre os
 links na ordem definida. Cada etapa é liberada com a senha da atividade, e a
 nota é opcional. O professor organiza tudo em pastas, consulta o código de
-entrada e vê o progresso (e as notas) sem recarregar a página.
+entrada e vê o progresso (e as notas) sem recarregar a página — e pode corrigir
+status e nota de qualquer aluno pelo painel.
 
-**Por que existe:** nasceu de aulas de conversação em que as tarefas ficavam
-espalhadas entre PDF, WhatsApp e planilha. O Trilha junta a sequência de links,
-a senha de liberação e o acompanhamento em um só lugar, sem exigir cadastro de
-alunos menores de idade.
-
-Não há demo pública: as imagens abaixo vêm de um cenário de demonstração
+Funciona para qualquer disciplina; o cenário de exemplo do repositório é de
+inglês. Não há demo pública: as imagens abaixo vêm desse cenário
 (`npm run docs:images`) e o app roda localmente em poucos minutos.
 
 ## Capturas
@@ -46,9 +52,10 @@ o aluno conclui uma etapa, com status e nota por link:
   links e opção de embaralhar a ordem por aluno.
 - **Código de entrada** por atividade, com encerramento e reabertura.
 - **Área do aluno** sem cadastro, com progresso por link, nota opcional e
-  liberação por senha — com rate limit no servidor.
+  liberação por senha — com rate limit no servidor. O aluno puxa a próxima
+  etapa sozinho, sem o professor precisar colar link.
 - **Acompanhamento em tempo real** dos alunos e do progresso via Supabase
-  Realtime.
+  Realtime, com correção de status e nota que também libera a próxima etapa.
 - **Lixeira reversível** com restauração e exclusão definitiva.
 - **Compartilhamento de pastas** entre professores, com acesso de editor.
 - **Expulsão de aluno** com reinício do progresso ao entrar de novo.

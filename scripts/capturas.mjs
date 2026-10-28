@@ -109,6 +109,11 @@ async function entrarComoProfessor(page) {
   await page.waitForURL("**/painel")
 }
 
+async function digitar(locator, texto, delay = 90) {
+  await locator.click()
+  await locator.pressSequentially(texto, { delay })
+}
+
 async function capturar(page, arquivo) {
   await page.evaluate(() => document.fonts.ready)
   await page.waitForTimeout(200)
@@ -116,36 +121,49 @@ async function capturar(page, arquivo) {
   console.log(`  ✓ ${arquivo}`)
 }
 
-async function concluirLink(page, { nota } = {}) {
-  await page.locator("[data-inline-password]:not(:disabled)").fill(SENHA)
-  if (nota) await page.getByLabel(/^Nota/).fill(nota)
+async function concluirLink(page, { nota, lenta = false } = {}) {
+  const senha = page.locator("[data-inline-password]:not(:disabled)")
+
+  if (nota) {
+    const campoNota = page.getByLabel(/^Nota/)
+    if (lenta) await digitar(campoNota, nota, 130)
+    else await campoNota.fill(nota)
+    if (lenta) await page.waitForTimeout(1000)
+  }
+
+  if (lenta) await digitar(senha, SENHA, 90)
+  else await senha.fill(SENHA)
+  if (lenta) await page.waitForTimeout(1000)
+
   await page.getByRole("button", { name: /^Concluir / }).click()
-  await page.waitForTimeout(1200)
+  await page.waitForTimeout(lenta ? 2400 : 1200)
 }
 
-async function abrirPrimeiroLink(page) {
+async function abrirPrimeiroLink(page, { lenta = false } = {}) {
   // Só o link em aberto é clicável; os concluídos/bloqueados perdem o href.
   await page.locator('a[aria-label$="Status: Aberto"]').first().click()
-  await page.waitForTimeout(1200)
+  await page.waitForTimeout(lenta ? 1800 : 1200)
 }
 
-async function entrarNaAtividade(page, codigo, nome) {
+async function entrarNaAtividade(page, codigo, nome, { lenta = false } = {}) {
   await irPara(page, `/aluno?codigo=${codigo}`)
-  await page.locator('input[name="nome"]').fill(nome)
+  const campoNome = page.locator('input[name="nome"]')
+  if (lenta) await digitar(campoNome, nome, 85)
+  else await campoNome.fill(nome)
   await page.getByRole("button", { name: "Pronto" }).click()
   await page.waitForURL(`**/atividade?codigo=${codigo}`)
   await esperarHidratacao(page)
 }
 
-async function gravarGif(webm, gif, { inicio = 0, largura = 960, fps = 11 } = {}) {
+async function gravarGif(webm, gif, { inicio = 0, largura = 1100, fps = 13 } = {}) {
   const filtro = [
     inicio > 0 ? `trim=start=${inicio}` : null,
     `setpts=PTS-STARTPTS`,
     `fps=${fps}`,
     `scale=${largura}:-1:flags=lanczos`,
     `split[a][b]`,
-    `[a]palettegen=stats_mode=diff[p]`,
-    `[b][p]paletteuse=dither=bayer:bayer_scale=3`,
+    `[a]palettegen=max_colors=256:stats_mode=full[p]`,
+    `[b][p]paletteuse=dither=sierra2_4a:diff_mode=rectangle`,
   ]
     .filter(Boolean)
     .join(",")
@@ -259,10 +277,10 @@ async function principal() {
   // ---------- GIF 1: fluxo do aluno ----------
   console.log("\n▸ gravando o fluxo do aluno…")
   const contextoGif = await browser.newContext({
-    viewport: { width: 1000, height: 720 },
+    viewport: { width: 1000, height: 780 },
     colorScheme: "light",
     locale: "pt-BR",
-    recordVideo: { dir: VIDEO_DIR, size: { width: 1000, height: 720 } },
+    recordVideo: { dir: VIDEO_DIR, size: { width: 1000, height: 780 } },
   })
   const gifAluno = await contextoGif.newPage()
   gifAluno.on("popup", (popup) => popup.close())
@@ -272,28 +290,38 @@ async function principal() {
       "*{transition:none!important;animation:none!important}html{caret-color:transparent!important}",
   })
 
-  await entrarNaAtividade(gifAluno, CODIGO_GIF, "Bia Ferraz")
-  await abrirPrimeiroLink(gifAluno)
-  await gifAluno.locator("[data-inline-password]").first().fill("errada")
+  await entrarNaAtividade(gifAluno, CODIGO_GIF, "Bia Ferraz", { lenta: true })
+  await gifAluno.waitForTimeout(900)
+  await abrirPrimeiroLink(gifAluno, { lenta: true })
+  await digitar(
+    gifAluno.locator("[data-inline-password]").first(),
+    "errada",
+    110
+  )
+  await gifAluno.waitForTimeout(800)
   await gifAluno.getByRole("button", { name: /^Concluir / }).click()
   await gifAluno.getByText("Tentativas restantes: 4.").waitFor({ timeout: 15000 })
-  await gifAluno.waitForTimeout(1200)
-  await concluirLink(gifAluno, { nota: "9,0" })
-  await gifAluno.waitForTimeout(2600)
+  await gifAluno.waitForTimeout(2200)
+  await concluirLink(gifAluno, { nota: "9,0", lenta: true })
+  await gifAluno.waitForTimeout(2800)
 
   const videoFluxo = await gifAluno.video().path()
   await contextoGif.close()
-  await gravarGif(videoFluxo, join(SAIDA, "fluxo-aluno.gif"))
+  await gravarGif(videoFluxo, join(SAIDA, "fluxo-aluno.gif"), {
+    inicio: 0.6,
+    largura: 1000,
+    fps: 15,
+  })
 
   // ---------- GIF 2: acompanhamento em tempo real ----------
   console.log("\n▸ gravando o acompanhamento em tempo real…")
   const estadoProfessor = await contextoProfessor.storageState()
   const contextoRealtime = await browser.newContext({
-    viewport: { width: 1280, height: 760 },
+    viewport: { width: 1280, height: 800 },
     colorScheme: "light",
     locale: "pt-BR",
     storageState: estadoProfessor,
-    recordVideo: { dir: VIDEO_DIR, size: { width: 1280, height: 760 } },
+    recordVideo: { dir: VIDEO_DIR, size: { width: 1280, height: 800 } },
   })
   const realtime = await contextoRealtime.newPage()
   await realtime.addInitScript(() => localStorage.setItem("theme", "light"))
@@ -308,7 +336,7 @@ async function principal() {
   const linhaTempoReal = realtime.locator("summary", { hasText: ALUNO })
   await linhaTempoReal.waitFor()
   await linhaTempoReal.click()
-  await realtime.waitForTimeout(600)
+  await realtime.waitForTimeout(1600)
 
   await abrirPrimeiroLink(aluno)
   await concluirLink(aluno, { nota: "10,0" })
@@ -320,14 +348,14 @@ async function principal() {
   const videoRealtime = await realtime.video().path()
   await contextoRealtime.close()
   await gravarGif(videoRealtime, join(SAIDA, "tempo-real.gif"), {
-    largura: 1000,
+    largura: 1280,
+    fps: 14,
   })
 
   await contextoAluno.close()
   await contextoProfessor.close()
   await browser.close()
   encerrar()
-  rmSync(VIDEO_DIR, { recursive: true, force: true })
 
   console.log("\n▸ restaurando o banco para o seed…")
   rodar("npx", ["supabase", "db", "reset"])
