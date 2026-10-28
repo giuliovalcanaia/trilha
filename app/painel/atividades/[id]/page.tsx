@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import {
@@ -36,6 +37,11 @@ import { getAtividadeEditor } from "@/lib/data/atividade"
 import { ROTULOS_ATIVIDADE } from "@/lib/dominio/status"
 import { formatarData, formatarDataHora } from "@/lib/format"
 import { createClient } from "@/lib/supabase/server"
+
+export const metadata: Metadata = {
+  title: "Atividade",
+  robots: { index: false, follow: false },
+}
 
 export default async function Page({
   params,

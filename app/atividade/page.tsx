@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 
 import { StudentActivityHeader } from "@/components/aluno/student-activity-header"
@@ -9,6 +10,11 @@ import { getAtividadePublica } from "@/lib/data/atividade"
 import { getLinksComProgresso } from "@/lib/data/aluno"
 import { formatarData } from "@/lib/format"
 import { statusProgresso } from "@/lib/dominio/status"
+
+export const metadata: Metadata = {
+  title: "Atividade",
+  robots: { index: false, follow: false },
+}
 
 export default async function Page({
   searchParams,

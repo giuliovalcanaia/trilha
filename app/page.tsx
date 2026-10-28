@@ -1,8 +1,13 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 
 import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { JoinCodeForm } from "@/components/aluno/join-code-form"
+
+export const metadata: Metadata = {
+  title: { absolute: "Entrar em uma atividade · Trilha" },
+}
 
 export default function Page() {
   return (
