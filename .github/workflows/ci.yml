@@ -79,7 +79,17 @@ jobs:
           version: latest
 
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+
+      # `--with-deps` instala as bibliotecas de sistema via apt, que depende
+      # dos mirrors da Ubuntu e já falhou por DNS no runner. Se o apt cair, o
+      # fallback instala só o navegador: a imagem ubuntu-24.04 do GitHub já
+      # traz as bibliotecas que o Chromium precisa.
+      - name: Instalar Chromium
+        run: |
+          npx playwright install --with-deps chromium || {
+            echo "::warning::apt falhou; instalando só o Chromium"
+            npx playwright install chromium
+          }
 
       - run: supabase start
 
