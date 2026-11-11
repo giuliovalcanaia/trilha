@@ -260,12 +260,7 @@ export default async function Page({
                                         participacaoId={aluno.id}
                                         linkId={etapaAtual.id}
                                         indice={indiceDaEtapa}
-                                        total={links.length}
                                         titulo={etapaAtual.titulo}
-                                        status={
-                                          progressoDaEtapa?.status ??
-                                          "bloqueada"
-                                        }
                                         pontuacao={
                                           progressoDaEtapa?.pontuacao ?? null
                                         }

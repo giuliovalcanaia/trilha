@@ -144,16 +144,19 @@ test("professor cria, aluno conclui e professor encerra", async ({
   const linhaDoAluno = page.locator("button[aria-expanded]", {
     hasText: NOME_ALUNO,
   })
-  // A conclusão rápida mostra a etapa atual do aluno, sem expandir nada.
-  await expect(page.getByText("Etapa 2 de 3")).toBeVisible()
+  // A conclusão rápida aponta para a etapa atual do aluno (o rótulo acessível
+  // do campo), sem expandir nada.
+  await expect(
+    page.getByLabel("Nota da etapa 2: localhost", { exact: true })
+  ).toBeVisible()
 
   // 6. Aluno conclui o segundo link (sem nota).
   await concluirLink(aluno, "localhost")
 
   // 7. Professor vê a etapa avançar sem recarregar.
-  await expect(page.getByText("Etapa 3 de 3")).toBeVisible({
-    timeout: 15_000,
-  })
+  await expect(
+    page.getByLabel("Nota da etapa 3: 127.0.0.2", { exact: true })
+  ).toBeVisible({ timeout: 15_000 })
 
   // 8. Professor conclui a última etapa pela nota rápida, sem nota.
   const notaRapida = page.getByLabel(/^Nota da etapa/)

@@ -8,32 +8,28 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/components/ui/toast"
 import { formatarNota, parseNota } from "@/lib/dominio/nota"
-import { ROTULOS_PROGRESSO, statusProgresso } from "@/lib/dominio/status"
 
 /**
  * Conclusão rápida da etapa atual de um aluno, direto na lista da aba Alunos.
  *
  * O campo de nota é opcional: salvar sem nota conclui a etapa sem lançar nota.
  * A ação recebida é sempre uma etapa não concluída, então o formulário marca
- * `concluida` (o RPC abre a próxima etapa) e atualiza a nota.
+ * `concluida` (o RPC abre a próxima etapa) e atualiza a nota. A etapa não
+ * aparece na linha — fica no `aria-label` do campo e no toast.
  */
 export function ConcluirEtapaForm({
   atividadeId,
   participacaoId,
   linkId,
   indice,
-  total,
   titulo,
-  status,
   pontuacao,
 }: {
   atividadeId: number
   participacaoId: number
   linkId: number
   indice: number
-  total: number
   titulo: string
-  status: string
   pontuacao: number | null
 }) {
   const router = useRouter()
@@ -83,34 +79,29 @@ export function ConcluirEtapaForm({
           resultado.valor === null
             ? "Etapa concluída sem nota."
             : `Nota ${formatarNota(resultado.valor)} salva e etapa concluída.`,
+        description: titulo,
       })
       router.refresh()
     })
   }
 
   return (
-    <form onSubmit={salvar} className="mt-2">
-      <p className="text-xs text-muted-foreground">
-        Etapa {indice} de {total} · {titulo} ·{" "}
-        {ROTULOS_PROGRESSO[statusProgresso(status)]}
-      </p>
-      <div className="mt-1.5 flex flex-wrap items-center gap-2">
-        <Input
-          name="pontuacao"
-          type="text"
-          inputMode="decimal"
-          autoComplete="off"
-          aria-label={`Nota da etapa ${indice}: ${titulo}`}
-          placeholder="Nota (opcional)"
-          className="w-32"
-          value={nota}
-          onChange={(event) => setNota(event.target.value)}
-          disabled={pending}
-        />
-        <Button type="submit" variant="outline" size="sm" disabled={pending}>
-          {pending ? "Salvando..." : "Salvar"}
-        </Button>
-      </div>
+    <form onSubmit={salvar} className="mt-2 flex flex-wrap items-center gap-2">
+      <Input
+        name="pontuacao"
+        type="text"
+        inputMode="decimal"
+        autoComplete="off"
+        aria-label={`Nota da etapa ${indice}: ${titulo}`}
+        placeholder="Nota (opcional)"
+        className="min-w-0 flex-1 sm:max-w-40"
+        value={nota}
+        onChange={(event) => setNota(event.target.value)}
+        disabled={pending}
+      />
+      <Button type="submit" variant="outline" size="sm" disabled={pending}>
+        {pending ? "Salvando..." : "Salvar"}
+      </Button>
     </form>
   )
 }
