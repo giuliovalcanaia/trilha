@@ -39,7 +39,7 @@ import { TabsContent } from "@/components/ui/tabs"
 import { getAtividadeEditor } from "@/lib/data/atividade"
 import { ordenarLinksDoAluno } from "@/lib/dominio/ordem-links"
 import { ROTULOS_ATIVIDADE } from "@/lib/dominio/status"
-import { formatarData, formatarDataHora } from "@/lib/format"
+import { formatarData } from "@/lib/format"
 import { createClient } from "@/lib/supabase/server"
 
 export const metadata: Metadata = {
@@ -226,13 +226,6 @@ export default async function Page({
                               (row) => row.ordem_embaralhada !== null
                             )
 
-                            const concluidos = links.filter(
-                              (link) =>
-                                progressoPorParticipacaoLink.get(
-                                  `${aluno.id}:${link.id}`
-                                )?.status === "concluida"
-                            ).length
-
                             // A etapa atual é a primeira não concluída na
                             // sequência do aluno — a mesma que a tela dele
                             // mostra como aberta/em andamento.
@@ -258,7 +251,6 @@ export default async function Page({
                               >
                                 <AlunoDisclosure
                                   nome={aluno.nome}
-                                  descricao={`· ${concluidos}/${links.length} concluídos · início ${formatarDataHora(aluno.iniciado_em)} · fim ${formatarDataHora(aluno.concluido_em)}`}
                                   acao={
                                     links.length === 0 ? null : etapaAtual &&
                                       indiceDaEtapa > 0 ? (

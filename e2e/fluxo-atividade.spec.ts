@@ -19,6 +19,7 @@ const NOME_ALUNO = "Aluno E2E"
 // internet, e os hosts privados fazem o `lookupLinkTitles` cair no nome do host.
 const LINK_1 = "http://127.0.0.1:9099/exercicio-1"
 const LINK_2 = "http://localhost:9099/exercicio-2"
+const LINK_3 = "http://127.0.0.2:9098/exercicio-3"
 
 /**
  * O cartão do link é um `<a>` com `aria-label="<título> - Status: <rótulo>"`.
@@ -87,12 +88,14 @@ test("professor cria, aluno conclui e professor encerra", async ({
 }) => {
   await loginProfessor(page)
 
-  // 1. Professor cria a atividade com dois links e senha de liberação.
+  // 1. Professor cria a atividade com três links e senha de liberação.
   await irPara(page, "/painel/atividades/nova")
 
   // O título é um `contentEditable` com aria-label próprio.
   await page.locator("#titulo-atividade").fill(TITULO)
-  await page.locator("#links-nova-atividade").fill(`${LINK_1}\n${LINK_2}`)
+  await page
+    .locator("#links-nova-atividade")
+    .fill(`${LINK_1}\n${LINK_2}\n${LINK_3}`)
   await page.locator("#senha").fill(SENHA_ATIVIDADE)
   await page.getByRole("button", { name: "Criar atividade" }).click()
 
@@ -124,10 +127,12 @@ test("professor cria, aluno conclui e professor encerra", async ({
 
   await expect(cardDoLink(aluno, "127.0.0.1", "Aberto")).toBeVisible()
   await expect(cardDoLink(aluno, "localhost", "Bloqueado")).toBeVisible()
+  await expect(cardDoLink(aluno, "127.0.0.2", "Bloqueado")).toBeVisible()
 
   // 4. Aluno conclui o primeiro link com nota e senha.
   await concluirLink(aluno, "127.0.0.1", "8,5")
   await expect(cardDoLink(aluno, "localhost", "Aberto")).toBeVisible()
+  await expect(cardDoLink(aluno, "127.0.0.2", "Bloqueado")).toBeVisible()
 
   // 5. Professor recarrega a página antes de acompanhar: é o cenário que já
   // quebrou o Realtime (o canal assinava antes da sessão ser restaurada do
@@ -139,17 +144,36 @@ test("professor cria, aluno conclui e professor encerra", async ({
   const linhaDoAluno = page.locator("button[aria-expanded]", {
     hasText: NOME_ALUNO,
   })
-  await expect(linhaDoAluno).toContainText("1/2 concluídos")
+  // A conclusão rápida mostra a etapa atual do aluno, sem expandir nada.
+  await expect(page.getByText("Etapa 2 de 3")).toBeVisible()
 
   // 6. Aluno conclui o segundo link (sem nota).
   await concluirLink(aluno, "localhost")
 
-  // 7. Professor vê a atividade concluída sem recarregar.
-  await expect(linhaDoAluno).toContainText("2/2 concluídos", {
+  // 7. Professor vê a etapa avançar sem recarregar.
+  await expect(page.getByText("Etapa 3 de 3")).toBeVisible({
     timeout: 15_000,
   })
 
-  // 8. Professor encerra a atividade.
+  // 8. Professor conclui a última etapa pela nota rápida, sem nota.
+  const notaRapida = page.getByLabel(/^Nota da etapa/)
+  await expect(notaRapida).toHaveValue("")
+  await notaRapida
+    .locator("xpath=ancestor::form")
+    .getByRole("button", { name: "Salvar" })
+    .click()
+
+  await expect(page.getByText("Todas as etapas concluídas")).toBeVisible({
+    timeout: 15_000,
+  })
+
+  // O detalhe continua mostrando etapa por etapa, agora com a última concluída.
+  await linhaDoAluno.click()
+  const terceiraEtapa = page.locator("form", { hasText: "127.0.0.2" })
+  await expect(terceiraEtapa.getByLabel("Situação")).toHaveValue("concluida")
+  await expect(terceiraEtapa.getByLabel("Nota")).toHaveValue("")
+
+  // 9. Professor encerra a atividade.
   await page.getByRole("button", { name: "Encerrar atividade" }).click()
   await expect(
     page.getByRole("button", { name: "Reabrir atividade" })

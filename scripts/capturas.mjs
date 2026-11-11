@@ -330,8 +330,8 @@ async function principal() {
       "*{transition:none!important;animation:none!important}html{caret-color:transparent!important}",
   })
 
-  // Já autenticado: abre direto a aba Alunos e expande a aluna, para a mudança
-  // de 2/4 para 3/4 aparecer sem rolagem.
+  // Já autenticado: abre direto a aba Alunos e expande a aluna, para a etapa
+  // atual avançar de 3 para 4 (e a lista de etapas atualizar) sem rolagem.
   await irPara(realtime, `${urlAtividade}?aba=alunos`)
   const linhaTempoReal = realtime.locator("button[aria-expanded]", {
     hasText: ALUNO,
@@ -342,9 +342,7 @@ async function principal() {
 
   await abrirPrimeiroLink(aluno)
   await concluirLink(aluno, { nota: "10,0" })
-  await linhaTempoReal.filter({ hasText: "3/4 concluídos" }).waitFor({
-    timeout: 20000,
-  })
+  await realtime.getByText("Etapa 4 de 4").waitFor({ timeout: 20000 })
   await realtime.waitForTimeout(1800)
 
   const videoRealtime = await realtime.video().path()

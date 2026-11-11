@@ -14,12 +14,10 @@ import { cn } from "@/lib/utils"
  */
 export function AlunoDisclosure({
   nome,
-  descricao,
   acao,
   detalhe,
 }: {
   nome: string
-  descricao: string
   acao: ReactNode
   detalhe: ReactNode
 }) {
@@ -42,10 +40,7 @@ export function AlunoDisclosure({
             aberto && "rotate-90"
           )}
         />
-        <span className="min-w-0">
-          <span className="font-medium">{nome}</span>
-          <span className="text-muted-foreground"> {descricao}</span>
-        </span>
+        <span className="min-w-0 font-medium">{nome}</span>
       </button>
 
       {acao}
