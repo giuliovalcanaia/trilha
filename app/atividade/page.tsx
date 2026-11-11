@@ -9,6 +9,7 @@ import { getEstudante, getParticipacaoDoAluno } from "@/lib/auth/estudante"
 import { getAtividadePublica } from "@/lib/data/atividade"
 import { getLinksComProgresso } from "@/lib/data/aluno"
 import { formatarData } from "@/lib/format"
+import { ordenarLinksDoAluno } from "@/lib/dominio/ordem-links"
 import { statusProgresso } from "@/lib/dominio/status"
 
 export const metadata: Metadata = {
@@ -122,18 +123,7 @@ export default async function Page({
   // `progresso_estudante.ordem_embaralhada`; a ordem canônica dos links não é
   // usada nesse caso. A lista pode continuar na ordem canônica para quem
   // entrou antes da opção ser ligada.
-  const ordemPorLink = new Map(
-    progresso.map((row) => [row.link_id, row.ordem_embaralhada])
-  )
-  const embaralhada = progresso.some((row) => row.ordem_embaralhada !== null)
-
-  const linksNaOrdemDoAluno = embaralhada
-    ? [...links].sort(
-        (a, b) =>
-          (ordemPorLink.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
-          (ordemPorLink.get(b.id) ?? Number.MAX_SAFE_INTEGER)
-      )
-    : links
+  const linksNaOrdemDoAluno = ordenarLinksDoAluno(links, progresso)
 
   const items = linksNaOrdemDoAluno.map((link) => ({
     id: link.id,

@@ -46,8 +46,8 @@ export function ShuffleLinksCardShell({
         </CardTitle>
         <CardDescription>
           Cada aluno recebe uma ordem aleatória e estável, sorteada quando
-          entra. A lista da aba Alunos e a pré-visualização continuam na ordem
-          original.
+          entra. A aba Alunos mostra a sequência de cada aluno; a
+          pré-visualização continua na ordem original.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -74,7 +74,7 @@ export function ShuffleLinksCardShell({
 
 /**
  * Opção de embaralhar a ordem dos links por aluno. Salva no mesmo instante em
- * que o switch muda; a ordem canônica (aba Alunos e prévia) não muda.
+ * que o switch muda; a ordem canônica (editor e prévia) não muda.
  */
 export function ShuffleLinksCard({
   atividadeId,

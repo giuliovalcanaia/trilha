@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { ShuffleIcon } from "lucide-react"
 
 import {
   alternarAtividade,
@@ -34,6 +35,7 @@ import {
 } from "@/components/ui/card"
 import { TabsContent } from "@/components/ui/tabs"
 import { getAtividadeEditor } from "@/lib/data/atividade"
+import { ordenarLinksDoAluno } from "@/lib/dominio/ordem-links"
 import { ROTULOS_ATIVIDADE } from "@/lib/dominio/status"
 import { formatarData, formatarDataHora } from "@/lib/format"
 import { createClient } from "@/lib/supabase/server"
@@ -74,6 +76,15 @@ export default async function Page({
   const progressoPorParticipacaoLink = new Map(
     progresso.map((row) => [`${row.participacao_id}:${row.link_id}`, row])
   )
+
+  // Cada aluno pode ter uma sequência própria (embaralhamento), então o
+  // progresso é agrupado por participação para ordenar a lista dele.
+  const progressoPorParticipacao = new Map<number, typeof progresso>()
+  for (const row of progresso) {
+    const lista = progressoPorParticipacao.get(row.participacao_id) ?? []
+    lista.push(row)
+    progressoPorParticipacao.set(row.participacao_id, lista)
+  }
 
   const participacoesPorAplicacao = new Map<number, typeof participacoes>()
   for (const participacao of participacoes) {
@@ -203,6 +214,16 @@ export default async function Page({
                       ) : (
                         <div className="space-y-2">
                           {alunos.map((aluno) => {
+                            const progressoDoAluno =
+                              progressoPorParticipacao.get(aluno.id) ?? []
+                            const linksDoAluno = ordenarLinksDoAluno(
+                              links,
+                              progressoDoAluno
+                            )
+                            const ordemSorteada = progressoDoAluno.some(
+                              (row) => row.ordem_embaralhada !== null
+                            )
+
                             const concluidos = links.filter(
                               (link) =>
                                 progressoPorParticipacaoLink.get(
@@ -229,7 +250,13 @@ export default async function Page({
                                     </span>
                                   </summary>
                                   <div className="mt-3 space-y-2">
-                                    {links.map((link, index) => {
+                                    {ordemSorteada && (
+                                      <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                                        <ShuffleIcon className="size-3" />
+                                        Ordem sorteada para este aluno.
+                                      </p>
+                                    )}
+                                    {linksDoAluno.map((link, index) => {
                                       const row =
                                         progressoPorParticipacaoLink.get(
                                           `${aluno.id}:${link.id}`
@@ -279,9 +306,10 @@ export default async function Page({
               <CardHeader>
                 <CardTitle>Links</CardTitle>
                 <CardDescription>
-                  A ordem das linhas é a ordem original, usada na aba Alunos e
-                  na pré-visualização. Com o embaralhamento ativo, cada aluno
-                  recebe uma sequência sorteada. Salve para aplicar as mudanças.
+                  A ordem das linhas é a ordem original, usada na
+                  pré-visualização e por quem entrou antes do embaralhamento. Na
+                  aba Alunos, cada aluno aparece na sequência que vê na tela.
+                  Salve para aplicar as mudanças.
                 </CardDescription>
                 <CardAction>
                   <div className="flex flex-wrap items-center justify-end gap-2">

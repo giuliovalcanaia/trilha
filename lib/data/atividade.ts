@@ -11,7 +11,7 @@ export const APLICACAO_ATIVIDADE = "id, codigo, data, status" as const
 export const PARTICIPACAO_ATIVIDADE =
   "id, aplicacao_id, nome, iniciado_em, concluido_em" as const
 export const PROGRESSO_ATIVIDADE =
-  "participacao_id, link_id, status, pontuacao" as const
+  "participacao_id, link_id, status, pontuacao, ordem_embaralhada" as const
 
 /** Atividade completa para o editor (inclui pasta e embaralhamento). */
 export async function getAtividade(supabase: SupabaseClient, id: number) {
