@@ -5,8 +5,8 @@ import type { MetadataRoute } from "next"
  * do servidor em todas as telas, então o escopo aqui é só permitir instalar —
  * sem cache offline, o navegador mostra a página de erro dele quando a rede cai.
  *
- * `theme_color` aceita um valor único (não varia com o tema): usamos o azul da
- * marca, que combina com o ícone nos dois esquemas.
+ * `theme_color` aceita um valor único (não varia com o tema): usamos preto,
+ * que não destoa em nenhum dos dois esquemas.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -21,7 +21,7 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     background_color: "#ffffff",
-    theme_color: "#2563eb",
+    theme_color: "#000000",
     categories: ["education"],
     icons: [
       {
