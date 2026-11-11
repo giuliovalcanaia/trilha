@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Geist_Mono, Inter } from "next/font/google"
 
 import "./globals.css"
@@ -32,6 +32,13 @@ export const metadata: Metadata = {
     template: "%s · Trilha",
   },
   description: descricao,
+  // iOS ignora `themeColor` do manifest ao adicionar à Tela de Início; estes
+  // metatags cuidam do modo standalone no Safari.
+  appleWebApp: {
+    capable: true,
+    title: "Trilha",
+    statusBarStyle: "default",
+  },
   openGraph: {
     type: "website",
     locale: "pt_BR",
@@ -44,6 +51,16 @@ export const metadata: Metadata = {
     title: "Trilha",
     description: descricao,
   },
+}
+
+// Cores da barra do navegador enquanto se navega (não é o `theme_color` do
+// manifest, que pinta a moldura do app instalado e aceita um valor só).
+export const viewport: Viewport = {
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
 }
 
 export default function RootLayout({

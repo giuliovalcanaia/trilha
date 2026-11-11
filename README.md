@@ -68,6 +68,8 @@ o aluno conclui uma etapa, com status e nota por link:
 - **Compartilhamento de pastas** entre professores, com acesso de editor.
 - **Expulsão de aluno** com reinício do progresso ao entrar de novo.
 - **Tema claro/escuro** (tecla `d` fora de campos de formulário).
+- **Instalável como app (PWA)** no celular e no desktop, sem service worker —
+  ou seja, sem modo offline: o app continua precisando de rede.
 
 ## Stack
 
@@ -105,6 +107,11 @@ npm run dev
 A URL do app é impressa no terminal (por padrão, `http://localhost:3000`). O
 Supabase local expõe a API em `http://127.0.0.1:54321` e o Studio em
 `http://127.0.0.1:54323`.
+
+Para testar a instalação do PWA, use `http://localhost` (o navegador trata como
+contexto seguro e libera o ícone de instalar). Num celular da rede local, o
+`http://192.168.x.x` **não** é instalável: aí é preciso HTTPS (túnel) ou o
+ambiente publicado.
 
 ### Credenciais do seed
 
