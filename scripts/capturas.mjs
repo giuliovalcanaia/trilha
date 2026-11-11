@@ -256,7 +256,7 @@ async function principal() {
   await prof.setViewportSize({ width: 1440, height: 900 })
 
   await prof.getByRole("tab", { name: /^Alunos/ }).click()
-  await prof.locator("summary", { hasText: ALUNO }).click()
+  await prof.locator("button[aria-expanded]", { hasText: ALUNO }).click()
   await capturar(prof, "alunos.png")
 
   await irPara(aluno, `/atividade?codigo=${CODIGO_ANDAMENTO}`)
@@ -333,7 +333,9 @@ async function principal() {
   // Já autenticado: abre direto a aba Alunos e expande a aluna, para a mudança
   // de 2/4 para 3/4 aparecer sem rolagem.
   await irPara(realtime, `${urlAtividade}?aba=alunos`)
-  const linhaTempoReal = realtime.locator("summary", { hasText: ALUNO })
+  const linhaTempoReal = realtime.locator("button[aria-expanded]", {
+    hasText: ALUNO,
+  })
   await linhaTempoReal.waitFor()
   await linhaTempoReal.click()
   await realtime.waitForTimeout(1600)

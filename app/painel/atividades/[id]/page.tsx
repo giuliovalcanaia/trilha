@@ -8,9 +8,11 @@ import {
   updateAtividade,
 } from "@/app/painel/actions/atividade"
 import { ActionForm } from "@/components/painel/action-form"
+import { AlunoDisclosure } from "@/components/painel/aluno-disclosure"
 import { AtividadeCabecalho } from "@/components/painel/atividade-cabecalho"
 import { AtividadeTabsList } from "@/components/painel/atividade-tabs-list"
 import { AtividadeTempoReal } from "@/components/painel/atividade-tempo-real"
+import { ConcluirEtapaForm } from "@/components/painel/concluir-etapa-form"
 import { ExpelStudentButton } from "@/components/painel/expel-student-button"
 import { LinkAtividadeCopiavel } from "@/components/painel/link-atividade-copiavel"
 import { LinksDraftProvider } from "@/components/painel/links-draft"
@@ -231,52 +233,88 @@ export default async function Page({
                                 )?.status === "concluida"
                             ).length
 
+                            // A etapa atual é a primeira não concluída na
+                            // sequência do aluno — a mesma que a tela dele
+                            // mostra como aberta/em andamento.
+                            const etapaAtual = linksDoAluno.find(
+                              (link) =>
+                                progressoPorParticipacaoLink.get(
+                                  `${aluno.id}:${link.id}`
+                                )?.status !== "concluida"
+                            )
+                            const indiceDaEtapa = etapaAtual
+                              ? linksDoAluno.indexOf(etapaAtual) + 1
+                              : -1
+                            const progressoDaEtapa = etapaAtual
+                              ? progressoPorParticipacaoLink.get(
+                                  `${aluno.id}:${etapaAtual.id}`
+                                )
+                              : undefined
+
                             return (
                               <div
                                 key={aluno.id}
                                 className="relative rounded-lg border p-3"
                               >
-                                <details className="min-w-0">
-                                  <summary className="cursor-pointer pr-28 text-sm">
-                                    <span className="font-medium">
-                                      {aluno.nome}
-                                    </span>
-                                    <span className="text-muted-foreground">
-                                      {" "}
-                                      · {concluidos}/{links.length} concluídos ·
-                                      início{" "}
-                                      {formatarDataHora(aluno.iniciado_em)} ·
-                                      fim {formatarDataHora(aluno.concluido_em)}
-                                    </span>
-                                  </summary>
-                                  <div className="mt-3 space-y-2">
-                                    {ordemSorteada && (
-                                      <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                                        <ShuffleIcon className="size-3" />
-                                        Ordem sorteada para este aluno.
+                                <AlunoDisclosure
+                                  nome={aluno.nome}
+                                  descricao={`· ${concluidos}/${links.length} concluídos · início ${formatarDataHora(aluno.iniciado_em)} · fim ${formatarDataHora(aluno.concluido_em)}`}
+                                  acao={
+                                    links.length === 0 ? null : etapaAtual &&
+                                      indiceDaEtapa > 0 ? (
+                                      <ConcluirEtapaForm
+                                        key={etapaAtual.id}
+                                        atividadeId={atividade.id}
+                                        participacaoId={aluno.id}
+                                        linkId={etapaAtual.id}
+                                        indice={indiceDaEtapa}
+                                        total={links.length}
+                                        titulo={etapaAtual.titulo}
+                                        status={
+                                          progressoDaEtapa?.status ??
+                                          "bloqueada"
+                                        }
+                                        pontuacao={
+                                          progressoDaEtapa?.pontuacao ?? null
+                                        }
+                                      />
+                                    ) : (
+                                      <p className="mt-2 text-xs text-muted-foreground">
+                                        Todas as etapas concluídas. Abra o aluno
+                                        para revisar as notas.
                                       </p>
-                                    )}
-                                    {linksDoAluno.map((link, index) => {
-                                      const row =
-                                        progressoPorParticipacaoLink.get(
-                                          `${aluno.id}:${link.id}`
-                                        )
+                                    )
+                                  }
+                                  detalhe={
+                                    <>
+                                      {ordemSorteada && (
+                                        <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                                          <ShuffleIcon className="size-3" />
+                                          Ordem sorteada para este aluno.
+                                        </p>
+                                      )}
+                                      {linksDoAluno.map((link, index) => {
+                                        const row =
+                                          progressoPorParticipacaoLink.get(
+                                            `${aluno.id}:${link.id}`
+                                          )
 
-                                      return (
-                                        <ProgressoAlunoForm
-                                          key={link.id}
-                                          atividadeId={atividade.id}
-                                          participacaoId={aluno.id}
-                                          linkId={link.id}
-                                          indice={index + 1}
-                                          titulo={link.titulo}
-                                          status={row?.status ?? "bloqueada"}
-                                          pontuacao={row?.pontuacao ?? null}
-                                        />
-                                      )
-                                    })}
-                                  </div>
-                                </details>
+                                        return (
+                                          <ProgressoAlunoForm
+                                            key={link.id}
+                                            atividadeId={atividade.id}
+                                            participacaoId={aluno.id}
+                                            linkId={link.id}
+                                            indice={index + 1}
+                                            titulo={link.titulo}
+                                            status={row?.status ?? "bloqueada"}
+                                            pontuacao={row?.pontuacao ?? null}
+                                          />
+                                        )
+                                      })}
+                                    </>
+                                  }
+                                />
                                 <span className="absolute top-3 right-3">
                                   <ExpelStudentButton
                                     atividadeId={atividade.id}

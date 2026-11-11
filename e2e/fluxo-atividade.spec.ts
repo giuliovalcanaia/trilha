@@ -136,7 +136,9 @@ test("professor cria, aluno conclui e professor encerra", async ({
   await esperarHidratacao(page)
   await abrirAbaAlunos(page)
 
-  const linhaDoAluno = page.locator("summary", { hasText: NOME_ALUNO })
+  const linhaDoAluno = page.locator("button[aria-expanded]", {
+    hasText: NOME_ALUNO,
+  })
   await expect(linhaDoAluno).toContainText("1/2 concluídos")
 
   // 6. Aluno conclui o segundo link (sem nota).
