@@ -86,7 +86,7 @@ export function ConcluirEtapaForm({
   }
 
   return (
-    <form onSubmit={salvar} className="mt-2 flex flex-wrap items-center gap-2">
+    <form onSubmit={salvar} className="mt-3 flex flex-wrap items-center gap-2">
       <Input
         name="pontuacao"
         type="text"

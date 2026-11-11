@@ -247,10 +247,17 @@ export default async function Page({
                             return (
                               <div
                                 key={aluno.id}
-                                className="relative rounded-lg border p-3"
+                                className="rounded-lg border p-3"
                               >
                                 <AlunoDisclosure
                                   nome={aluno.nome}
+                                  acoes={
+                                    <ExpelStudentButton
+                                      atividadeId={atividade.id}
+                                      participacaoId={aluno.id}
+                                      nome={aluno.nome}
+                                    />
+                                  }
                                   acao={
                                     links.length === 0 ? null : etapaAtual &&
                                       indiceDaEtapa > 0 ? (
@@ -266,7 +273,7 @@ export default async function Page({
                                         }
                                       />
                                     ) : (
-                                      <p className="mt-2 text-xs text-muted-foreground">
+                                      <p className="mt-3 text-xs text-muted-foreground">
                                         Todas as etapas concluídas. Abra o aluno
                                         para revisar as notas.
                                       </p>
@@ -302,13 +309,6 @@ export default async function Page({
                                     </>
                                   }
                                 />
-                                <span className="absolute top-3 right-3">
-                                  <ExpelStudentButton
-                                    atividadeId={atividade.id}
-                                    participacaoId={aluno.id}
-                                    nome={aluno.nome}
-                                  />
-                                </span>
                               </div>
                             )
                           })}
