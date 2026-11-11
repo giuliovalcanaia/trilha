@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 
 import { createClient } from "@/lib/supabase/client"
+import { assinarCanalRealtime } from "@/lib/supabase/realtime"
 
 /**
  * Mantém a tela do aluno sincronizada com o painel do professor:
@@ -40,54 +41,57 @@ export function StudentActivityRealtime({
 
     document.addEventListener("visibilitychange", atualizarSeVisivel)
 
-    const canal = supabase
-      .channel(`aluno-participacao-${participacaoId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "progresso_estudante",
-          filter: `participacao_id=eq.${participacaoId}`,
-        },
-        agendarAtualizacao
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "progresso_estudante",
-          filter: `participacao_id=eq.${participacaoId}`,
-        },
-        agendarAtualizacao
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "aplicacoes",
-          filter: `id=eq.${aplicacaoId}`,
-        },
-        agendarAtualizacao
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "participacoes",
-          filter: `id=eq.${participacaoId}`,
-        },
-        agendarAtualizacao
-      )
-      .subscribe()
+    const pararCanal = assinarCanalRealtime(
+      supabase,
+      `aluno-participacao-${participacaoId}`,
+      (canal) =>
+        canal
+          .on(
+            "postgres_changes",
+            {
+              event: "INSERT",
+              schema: "public",
+              table: "progresso_estudante",
+              filter: `participacao_id=eq.${participacaoId}`,
+            },
+            agendarAtualizacao
+          )
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: "progresso_estudante",
+              filter: `participacao_id=eq.${participacaoId}`,
+            },
+            agendarAtualizacao
+          )
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: "aplicacoes",
+              filter: `id=eq.${aplicacaoId}`,
+            },
+            agendarAtualizacao
+          )
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: "participacoes",
+              filter: `id=eq.${participacaoId}`,
+            },
+            agendarAtualizacao
+          )
+    )
 
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
       document.removeEventListener("visibilitychange", atualizarSeVisivel)
-      void supabase.removeChannel(canal)
+      pararCanal()
     }
   }, [participacaoId, aplicacaoId, router])
 

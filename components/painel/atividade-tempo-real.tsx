@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 
 import { createClient } from "@/lib/supabase/client"
+import { assinarCanalRealtime } from "@/lib/supabase/realtime"
 
 /**
  * Mantém a aba Alunos atualizada enquanto o professor acompanha a turma:
@@ -25,33 +26,36 @@ export function AtividadeTempoReal({ atividadeId }: { atividadeId: number }) {
       timeoutRef.current = setTimeout(() => router.refresh(), 250)
     }
 
-    const canal = supabase
-      .channel(`atividade-${atividadeId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "participacoes" },
-        agendarAtualizacao
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "participacoes" },
-        agendarAtualizacao
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "progresso_estudante" },
-        agendarAtualizacao
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "progresso_estudante" },
-        agendarAtualizacao
-      )
-      .subscribe()
+    const pararCanal = assinarCanalRealtime(
+      supabase,
+      `atividade-${atividadeId}`,
+      (canal) =>
+        canal
+          .on(
+            "postgres_changes",
+            { event: "INSERT", schema: "public", table: "participacoes" },
+            agendarAtualizacao
+          )
+          .on(
+            "postgres_changes",
+            { event: "UPDATE", schema: "public", table: "participacoes" },
+            agendarAtualizacao
+          )
+          .on(
+            "postgres_changes",
+            { event: "INSERT", schema: "public", table: "progresso_estudante" },
+            agendarAtualizacao
+          )
+          .on(
+            "postgres_changes",
+            { event: "UPDATE", schema: "public", table: "progresso_estudante" },
+            agendarAtualizacao
+          )
+    )
 
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
-      void supabase.removeChannel(canal)
+      pararCanal()
     }
   }, [atividadeId, router])
 

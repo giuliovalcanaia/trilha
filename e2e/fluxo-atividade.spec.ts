@@ -129,7 +129,9 @@ test("professor cria, aluno conclui e professor encerra", async ({
   await concluirLink(aluno, "127.0.0.1", "8,5")
   await expect(cardDoLink(aluno, "localhost", "Aberto")).toBeVisible()
 
-  // 5. Professor vê o progresso (recarrega em vez de esperar o Realtime).
+  // 5. Professor recarrega a página antes de acompanhar: é o cenário que já
+  // quebrou o Realtime (o canal assinava antes da sessão ser restaurada do
+  // cookie e entrava como `anon`). Daqui em diante nada é recarregado.
   await page.reload()
   await esperarHidratacao(page)
   await abrirAbaAlunos(page)
@@ -140,11 +142,10 @@ test("professor cria, aluno conclui e professor encerra", async ({
   // 6. Aluno conclui o segundo link (sem nota).
   await concluirLink(aluno, "localhost")
 
-  // 7. Professor vê a atividade concluída.
-  await page.reload()
-  await esperarHidratacao(page)
-  await abrirAbaAlunos(page)
-  await expect(linhaDoAluno).toContainText("2/2 concluídos")
+  // 7. Professor vê a atividade concluída sem recarregar.
+  await expect(linhaDoAluno).toContainText("2/2 concluídos", {
+    timeout: 15_000,
+  })
 
   // 8. Professor encerra a atividade.
   await page.getByRole("button", { name: "Encerrar atividade" }).click()
@@ -153,9 +154,11 @@ test("professor cria, aluno conclui e professor encerra", async ({
   ).toBeVisible()
   await expect(page.getByText("Encerrada").first()).toBeVisible()
 
-  // 9. O aluno perde o acesso: o código e a atividade não valem mais.
-  await aluno.reload()
-  await expect(aluno.getByText("Atividade encerrada.")).toBeVisible()
+  // 9. O aluno perde o acesso sem recarregar: o encerramento chega pelo
+  // Realtime (aplicacoes) e o Server Component é atualizado.
+  await expect(aluno.getByText("Atividade encerrada.")).toBeVisible({
+    timeout: 15_000,
+  })
 
   await contextoAluno.close()
 })
