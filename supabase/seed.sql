@@ -202,7 +202,8 @@ begin
   values (v_atividade_id, 'TESTE1', current_date, 'aberta')
   returning id into v_aplicacao_id;
 
-  -- Links, na ordem em que o aluno deve fazer
+  -- Links, na ordem em que o aluno deve fazer. São 15 de propósito: a lista
+  -- fica longa o bastante para testar o cabeçalho fixo e a rolagem.
   insert into public.links (atividade_id, ordem, titulo, descricao, href)
   values
     (
@@ -224,6 +225,90 @@ begin
       3,
       'Listening: Daily Routines',
       'Áudio com perguntas de compreensão',
+      'https://www.esl-lab.com/easy/daily-routines/'
+    ),
+    (
+      v_atividade_id,
+      4,
+      'Reading: My typical day',
+      'Texto curto com perguntas de compreensão',
+      'https://learnenglish.britishcouncil.org/skills/reading/a1-reading/my-typical-day'
+    ),
+    (
+      v_atividade_id,
+      5,
+      'Horas e rotina — vocabulário',
+      'Que horas você faz cada coisa?',
+      'https://learnenglish.britishcouncil.org/vocabulary/a1-a2-vocabulary/telling-the-time'
+    ),
+    (
+      v_atividade_id,
+      6,
+      'Present Simple — perguntas',
+      'Exercícios com do/does',
+      'https://www.perfect-english-grammar.com/present-simple-exercise-2.html'
+    ),
+    (
+      v_atividade_id,
+      7,
+      'Listening: A day in the life',
+      'Áudio com perguntas de compreensão',
+      'https://www.esl-lab.com/easy/a-day-in-the-life/'
+    ),
+    (
+      v_atividade_id,
+      8,
+      'Advérbios de frequência',
+      'always, usually, sometimes, never',
+      'https://learnenglish.britishcouncil.org/grammar/english-grammar-reference/adverbs-frequency'
+    ),
+    (
+      v_atividade_id,
+      9,
+      'Reading: Weekend routines',
+      'O que as pessoas fazem no fim de semana',
+      'https://learnenglish.britishcouncil.org/skills/reading/a1-reading/weekend-routines'
+    ),
+    (
+      v_atividade_id,
+      10,
+      'Terceira pessoa: he/she/it',
+      'Exercícios de conjugação',
+      'https://www.perfect-english-grammar.com/present-simple-exercise-3.html'
+    ),
+    (
+      v_atividade_id,
+      11,
+      'Listening: Morning routine',
+      'Áudio curto com vocabulário de rotina',
+      'https://www.esl-lab.com/easy/morning-routine/'
+    ),
+    (
+      v_atividade_id,
+      12,
+      'Tarefas de casa — vocabulário',
+      'Housework: verbos e expressões',
+      'https://learnenglish.britishcouncil.org/vocabulary/a1-a2-vocabulary/housework'
+    ),
+    (
+      v_atividade_id,
+      13,
+      'Writing: my routine',
+      'Produza um parágrafo curto sobre a sua rotina',
+      'https://www.britishcouncil.org/english/writing'
+    ),
+    (
+      v_atividade_id,
+      14,
+      'Revisão: ordem das frases',
+      'Organize as palavras em frases corretas',
+      'https://www.perfect-english-grammar.com/present-simple-exercise-4.html'
+    ),
+    (
+      v_atividade_id,
+      15,
+      'Quiz final: daily routines',
+      'Teste rápido de vocabulário e gramática',
       'https://www.esl-lab.com/easy/daily-routines/'
     );
 

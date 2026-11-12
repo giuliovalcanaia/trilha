@@ -15,7 +15,13 @@ type StudentActivityHeaderProps = {
   total: number
 }
 
-/** Cabeçalho da atividade do aluno, compartilhado com a pré-visualização. */
+/**
+ * Cabeçalho da atividade do aluno, compartilhado com a pré-visualização.
+ *
+ * Fica fixo no topo (`sticky`): com muitos links, o aluno rola a lista e
+ * continua vendo título, data e progresso sem precisar voltar ao topo. O
+ * fundo semitransparente com blur cobre os cartões que passam por baixo.
+ */
 export function StudentActivityHeader({
   titulo,
   subtitulo,
@@ -27,15 +33,17 @@ export function StudentActivityHeader({
     total > 0 ? Math.round((concluidas / total) * 100) : 0
 
   return (
-    <div className="m-4 mt-4">
-      <h1 className="scroll-m-24 text-2xl font-semibold tracking-tight sm:text-3xl">
+    <header className="sticky top-0 z-30 border-b bg-background/95 px-4 pt-3 pb-3 backdrop-blur">
+      <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
         {titulo}
       </h1>
       {subtitulo && (
-        <p className="text-muted-foreground sm:text-base">{subtitulo}</p>
+        <p className="text-sm text-muted-foreground sm:text-base">
+          {subtitulo}
+        </p>
       )}
       {meta && <p className="text-sm text-muted-foreground">{meta}</p>}
-      <Card className="mt-4">
+      <Card size="sm" className="mt-3">
         <CardHeader>
           <Progress value={progressoPercentual} className="w-full">
             <ProgressLabel>Progresso da Atividade</ProgressLabel>
@@ -43,6 +51,6 @@ export function StudentActivityHeader({
           </Progress>
         </CardHeader>
       </Card>
-    </div>
+    </header>
   )
 }

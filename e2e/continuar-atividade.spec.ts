@@ -68,9 +68,20 @@ test("nome conectado fica indisponível até o professor derrubar", async ({
   // 2. O aluno A assume o nome e cai direto na atividade.
   await mariaA.click()
   await alunoA.waitForURL(`**/atividade?codigo=${CODIGO}`)
+  const cabecalho = alunoA.getByRole("heading", {
+    name: `Daily Routines - ${NOME}`,
+  })
+  await expect(cabecalho).toBeVisible()
+
+  // O cabeçalho (título, data e progresso) fica fixo no topo enquanto a
+  // lista de 15 links rola; é o que mantém a aula visível lá em cima.
+  await alunoA.evaluate(() =>
+    window.scrollTo(0, document.documentElement.scrollHeight)
+  )
+  await expect(cabecalho).toBeInViewport()
   await expect(
-    alunoA.getByRole("heading", { name: `Daily Routines - ${NOME}` })
-  ).toBeVisible()
+    alunoA.getByText("Progresso da Atividade", { exact: true })
+  ).toBeInViewport()
 
   // 3. O aluno B vê o nome esmaecido e desabilitado, sem conseguir clicar.
   await expect(mariaB).toBeDisabled({ timeout: 20_000 })
