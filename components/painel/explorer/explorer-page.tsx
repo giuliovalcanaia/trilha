@@ -1,9 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { useEffect, useMemo, useState, useTransition } from "react"
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 import Link from "next/link"
 import {
+  ClipboardPasteIcon,
   FolderIcon,
   FolderPlusIcon,
   PlusIcon,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 
+import { colarItens } from "@/app/painel/actions/area-transferencia"
 import {
   duplicateAtividade,
   setAtividadeAtiva,
@@ -22,6 +24,8 @@ import {
   ContextMenuContent,
   ContextMenuGroup,
   ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 import {
@@ -54,10 +58,17 @@ import {
 } from "@/components/painel/explorer/explorer-types"
 import { toast } from "@/components/ui/toast"
 import type { ActionResult } from "@/lib/actions/result"
+import {
+  destinoBloqueado,
+  itensRaiz,
+  rotuloTransferencia,
+  totalDeItens,
+} from "@/lib/dominio/area-transferencia"
 import { normalizarBusca } from "@/lib/dominio/busca"
 import { pastaBreadcrumb, pastaDescendantIds } from "@/lib/dominio/pastas"
 import { itemKey } from "@/lib/dominio/selecao"
 import type { ExplorerData } from "@/lib/painel/explorer-data"
+import { useAreaTransferencia } from "@/components/painel/area-transferencia-context"
 import { useSelecao } from "@/components/painel/selecao-context"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { useNavegacaoPastas } from "@/hooks/use-navegacao-pastas"
@@ -87,6 +98,7 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
   const { pastaAtualId, navegar } = useNavegacaoPastas()
   const isMobile = useIsMobile()
   const { selecionados, selecionar, definir, limpar } = useSelecao()
+  const { area, definirArea, limparArea } = useAreaTransferencia()
   const [view, setView] = useStoredPreference("painel:view", VIEWS, "lista")
   const [ordem, setOrdem] = useStoredPreference(
     "painel:ordem",
@@ -228,6 +240,18 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
     selecionados.has(key)
   ).length
 
+  const podeColar = (area?.total ?? 0) > 0
+
+  // Itens recortados continuam esmaecidos na pasta de origem até a colagem.
+  const recortados = useMemo(() => {
+    if (area?.modo !== "recortar") return new Set<string>()
+
+    return new Set([
+      ...area.itens.pastas.map((id) => itemKey({ tipo: "pasta", id })),
+      ...area.itens.atividades.map((id) => itemKey({ tipo: "atividade", id })),
+    ])
+  }, [area])
+
   useEffect(() => {
     limpar()
   }, [pastaAtualId, limpar])
@@ -239,36 +263,6 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
   useEffect(() => {
     limpar()
   }, [query, limpar])
-
-  useEffect(() => {
-    function aoTeclar(event: KeyboardEvent) {
-      const alvo = event.target as HTMLElement | null
-
-      if (alvo?.closest("input, textarea, select, [contenteditable='true']")) {
-        return
-      }
-
-      if (event.key === "Escape") {
-        limpar()
-        return
-      }
-
-      if (event.key === "Delete") {
-        if (selecionados.size === 0) return
-        event.preventDefault()
-        setDialog({ kind: "lixeira-selecao" })
-        return
-      }
-
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "a") {
-        event.preventDefault()
-        definir(chavesVisiveis)
-      }
-    }
-
-    window.addEventListener("keydown", aoTeclar)
-    return () => window.removeEventListener("keydown", aoTeclar)
-  }, [chavesVisiveis, definir, limpar, selecionados.size])
 
   const descendentes = useMemo(
     () =>
@@ -283,22 +277,191 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
       ? "/painel/atividades/nova"
       : `/painel/atividades/nova?pasta=${pastaAtualId}`
 
-  function executar(action: () => Promise<ActionResult>) {
-    startTransition(async () => {
-      const result = await action()
+  const executar = useCallback(
+    (action: () => Promise<ActionResult>, aoConcluir?: () => void) => {
+      startTransition(async () => {
+        const result = await action()
 
-      if (result.error) {
-        toast.add({ type: "error", title: result.error })
+        if (result.error) {
+          toast.add({ type: "error", title: result.error })
+          return
+        }
+
+        if (result.success) {
+          toast.add({ type: "success", title: result.success })
+        }
+
+        aoConcluir?.()
+        router.refresh()
+      })
+    },
+    [router]
+  )
+
+  const copiarItens = useCallback(
+    (chaves: string[]) => {
+      const itens = itensRaiz(chaves, data.pastas, data.todasAtividades)
+      if (totalDeItens(itens) === 0) return
+
+      definirArea("copiar", itens)
+      toast.add({
+        type: "success",
+        title: rotuloTransferencia("copiar", totalDeItens(itens)),
+        description: "Cole na pasta de destino (Ctrl+V ou botão Colar).",
+      })
+    },
+    [data.pastas, data.todasAtividades, definirArea]
+  )
+
+  const recortarItens = useCallback(
+    (chaves: string[]) => {
+      const itens = itensRaiz(chaves, data.pastas, data.todasAtividades)
+      if (totalDeItens(itens) === 0) return
+
+      definirArea("recortar", itens)
+      toast.add({
+        type: "success",
+        title: rotuloTransferencia("recortar", totalDeItens(itens)),
+        description: "Abra a pasta de destino e cole (Ctrl+V ou botão Colar).",
+      })
+    },
+    [data.pastas, data.todasAtividades, definirArea]
+  )
+
+  const colarEm = useCallback(
+    (destino: number | null) => {
+      if (!area || area.total === 0) {
+        toast.add({ type: "error", title: "Não há itens para colar." })
         return
       }
 
-      if (result.success) {
-        toast.add({ type: "success", title: result.success })
+      const motivo = destinoBloqueado(
+        area.itens,
+        area.modo,
+        destino,
+        data.pastas
+      )
+
+      if (motivo) {
+        toast.add({ type: "error", title: motivo })
+        return
       }
 
-      router.refresh()
-    })
+      // A área de transferência pode ter envelhecido desde o copiar/recortar.
+      const pastasVisiveis = new Set(data.pastas.map((pasta) => pasta.id))
+      const atividadesVisiveis = new Set(
+        data.todasAtividades.map((atividade) => atividade.id)
+      )
+      const itens = {
+        pastas: area.itens.pastas.filter((id) => pastasVisiveis.has(id)),
+        atividades: area.itens.atividades.filter((id) =>
+          atividadesVisiveis.has(id)
+        ),
+      }
+
+      if (totalDeItens(itens) === 0) {
+        limparArea()
+        toast.add({
+          type: "error",
+          title:
+            "Os itens da área de transferência não estão mais disponíveis.",
+        })
+        return
+      }
+
+      const modo = area.modo
+
+      executar(
+        () => colarItens({ modo, ...itens, destino }),
+        () => {
+          if (modo !== "recortar") return
+
+          limparArea()
+          limpar()
+        }
+      )
+    },
+    [area, data.pastas, data.todasAtividades, executar, limpar, limparArea]
+  )
+
+  // O menu de contexto age sobre a seleção quando o item faz parte dela;
+  // caso contrário, só sobre o item clicado.
+  function copiar(item: ExplorerItem) {
+    const chave = itemKey(item)
+
+    copiarItens(selecionados.has(chave) ? [...selecionados] : [chave])
   }
+
+  function recortar(item: ExplorerItem) {
+    const chave = itemKey(item)
+
+    recortarItens(selecionados.has(chave) ? [...selecionados] : [chave])
+  }
+
+  useEffect(() => {
+    function aoTeclar(event: KeyboardEvent) {
+      const alvo = event.target as HTMLElement | null
+
+      if (alvo?.closest("input, textarea, select, [contenteditable='true']")) {
+        return
+      }
+
+      // Com um diálogo aberto, os atalhos pertencem a ele (inclusive Escape).
+      if (dialog) return
+
+      if (event.key === "Escape") {
+        limpar()
+        return
+      }
+
+      if (event.key === "Delete") {
+        if (selecionados.size === 0) return
+        event.preventDefault()
+        setDialog({ kind: "lixeira-selecao" })
+        return
+      }
+
+      if (!(event.metaKey || event.ctrlKey)) return
+
+      const tecla = event.key.toLowerCase()
+
+      if (tecla === "a") {
+        event.preventDefault()
+        definir(chavesVisiveis)
+        return
+      }
+
+      if (tecla === "c" || tecla === "x") {
+        if (selecionados.size === 0) return
+        event.preventDefault()
+
+        const chaves = [...selecionados]
+        if (tecla === "c") copiarItens(chaves)
+        else recortarItens(chaves)
+        return
+      }
+
+      if (tecla === "v") {
+        if (!area || area.total === 0) return
+        event.preventDefault()
+        colarEm(pastaAtualId)
+      }
+    }
+
+    window.addEventListener("keydown", aoTeclar)
+    return () => window.removeEventListener("keydown", aoTeclar)
+  }, [
+    area,
+    chavesVisiveis,
+    colarEm,
+    copiarItens,
+    definir,
+    dialog,
+    limpar,
+    pastaAtualId,
+    recortarItens,
+    selecionados,
+  ])
 
   function abrir(item: ExplorerItem) {
     if (isPasta(item)) {
@@ -457,6 +620,9 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
         onNewFolder={() =>
           setDialog({ kind: "nova-pasta", parentId: pastaAtualId })
         }
+        onPaste={() => colarEm(pastaAtualId)}
+        itensNaArea={area?.total ?? 0}
+        colando={isPending}
         newActivityHref={newActivityHref}
         onDragOverTo={arrastarSobre}
         onDropTo={soltar}
@@ -471,6 +637,8 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
           onNewFolder={() =>
             setDialog({ kind: "nova-pasta", parentId: pastaAtualId })
           }
+          onPaste={() => colarEm(pastaAtualId)}
+          podeColar={podeColar}
           newActivityHref={newActivityHref}
           extra={novoItem}
           onShare={
@@ -485,70 +653,93 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
           }
         />
       ) : (
-        <div
-          role="listbox"
-          aria-label="Conteúdo da pasta"
-          aria-multiselectable="true"
-          className={cn(
-            view === "lista"
-              ? "flex flex-col gap-2"
-              : "grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-          )}
-        >
-          {visiveis.map((item) => (
-            <ExplorerItemView
-              key={`${item.tipo}-${item.id}`}
-              item={item}
-              view={view}
-              selected={selecionados.has(itemKey(item))}
-              local={localDoItem(item)}
-              abrirComUmClique={isMobile}
-              abrindo={!isPasta(item) && abrindo?.id === item.id}
-              onPrefetch={
-                isPasta(item)
-                  ? undefined
-                  : () => router.prefetch(urlDaAtividade(item.id))
-              }
-              onSelect={(mods) => selecionarItem(item, mods)}
-              onOpen={() => abrir(item)}
-              onNewFolder={() =>
-                setDialog({
-                  kind: "nova-pasta",
-                  parentId: isPasta(item) ? item.id : pastaAtualId,
-                })
-              }
-              onNewActivity={() => {
-                if (isPasta(item)) {
-                  router.push(`/painel/atividades/nova?pasta=${item.id}`)
+        <ContextMenu>
+          <ContextMenuTrigger
+            role="listbox"
+            aria-label="Conteúdo da pasta"
+            aria-multiselectable="true"
+            className={cn(
+              view === "lista"
+                ? "flex flex-col gap-2"
+                : "grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            )}
+          >
+            {visiveis.map((item) => (
+              <ExplorerItemView
+                key={`${item.tipo}-${item.id}`}
+                item={item}
+                view={view}
+                selected={selecionados.has(itemKey(item))}
+                local={localDoItem(item)}
+                abrirComUmClique={isMobile}
+                abrindo={!isPasta(item) && abrindo?.id === item.id}
+                onPrefetch={
+                  isPasta(item)
+                    ? undefined
+                    : () => router.prefetch(urlDaAtividade(item.id))
                 }
-              }}
-              onShare={() => {
-                if (isPasta(item)) {
+                onSelect={(mods) => selecionarItem(item, mods)}
+                onOpen={() => abrir(item)}
+                onNewFolder={() =>
                   setDialog({
-                    kind: "compartilhar",
-                    pastaId: item.id,
-                    nome: item.nome,
+                    kind: "nova-pasta",
+                    parentId: isPasta(item) ? item.id : pastaAtualId,
                   })
                 }
-              }}
-              onRename={() => setDialog({ kind: "renomear", item })}
-              onDuplicate={() => duplicar(item)}
-              onMove={() => setDialog({ kind: "mover", item })}
-              onToggleAtiva={() => alternarAtiva(item)}
-              onCopyCode={(codigo) => {
-                void copiarCodigo(codigo)
-              }}
-              onTrash={() => excluir(item)}
-              onDragStart={iniciarArraste}
-              onDragEnd={finalizarArraste}
-              onDragOver={arrastarSobreItem}
-              onDragLeave={() => setDragOverKey(null)}
-              onDrop={soltarEmItem}
-              dropActive={isPasta(item) && dragOverKey === targetKey(item.id)}
-              disabledDrop={isPasta(item) && !!dragging && !podeSoltar(item.id)}
-            />
-          ))}
-        </div>
+                onNewActivity={() => {
+                  if (isPasta(item)) {
+                    router.push(`/painel/atividades/nova?pasta=${item.id}`)
+                  }
+                }}
+                onShare={() => {
+                  if (isPasta(item)) {
+                    setDialog({
+                      kind: "compartilhar",
+                      pastaId: item.id,
+                      nome: item.nome,
+                    })
+                  }
+                }}
+                onRename={() => setDialog({ kind: "renomear", item })}
+                onDuplicate={() => duplicar(item)}
+                onMove={() => setDialog({ kind: "mover", item })}
+                onCopy={() => copiar(item)}
+                onCut={() => recortar(item)}
+                onPaste={() => {
+                  if (isPasta(item)) colarEm(item.id)
+                }}
+                podeColar={podeColar}
+                recortado={recortados.has(itemKey(item))}
+                onToggleAtiva={() => alternarAtiva(item)}
+                onCopyCode={(codigo) => {
+                  void copiarCodigo(codigo)
+                }}
+                onTrash={() => excluir(item)}
+                onDragStart={iniciarArraste}
+                onDragEnd={finalizarArraste}
+                onDragOver={arrastarSobreItem}
+                onDragLeave={() => setDragOverKey(null)}
+                onDrop={soltarEmItem}
+                dropActive={isPasta(item) && dragOverKey === targetKey(item.id)}
+                disabledDrop={
+                  isPasta(item) && !!dragging && !podeSoltar(item.id)
+                }
+              />
+            ))}
+          </ContextMenuTrigger>
+          <ContextMenuContent className="w-56">
+            <ContextMenuGroup>
+              <ContextMenuItem
+                disabled={!podeColar}
+                onClick={() => colarEm(pastaAtualId)}
+              >
+                <ClipboardPasteIcon />
+                Colar
+                <ContextMenuShortcut>Ctrl+V</ContextMenuShortcut>
+              </ContextMenuItem>
+            </ContextMenuGroup>
+          </ContextMenuContent>
+        </ContextMenu>
       )}
 
       <p className="text-xs text-muted-foreground">
@@ -556,6 +747,11 @@ export function ExplorerPage({ data }: { data: ExplorerData }) {
           ? `${selecionadosVisiveis} de ${visiveis.length} selecionado(s)`
           : `${visiveis.length} item(ns)`}
         {termo ? ` para “${query.trim()}” em todas as pastas` : ""}
+        {area
+          ? ` · ${area.total} ${
+              area.modo === "copiar" ? "copiado(s)" : "recortado(s)"
+            }`
+          : ""}
       </p>
 
       {dialog?.kind === "nova-pasta" && (
@@ -629,6 +825,8 @@ function EmptyExplorer({
   buscando,
   pastaAtualNome,
   onNewFolder,
+  onPaste,
+  podeColar,
   newActivityHref,
   extra,
   onShare,
@@ -636,6 +834,8 @@ function EmptyExplorer({
   buscando: boolean
   pastaAtualNome: string | null
   onNewFolder: () => void
+  onPaste: () => void
+  podeColar: boolean
   newActivityHref: string
   extra: React.ReactNode
   onShare?: () => void
@@ -675,6 +875,14 @@ function EmptyExplorer({
         </Card>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-56">
+        <ContextMenuGroup>
+          <ContextMenuItem disabled={!podeColar} onClick={onPaste}>
+            <ClipboardPasteIcon />
+            Colar
+            <ContextMenuShortcut>Ctrl+V</ContextMenuShortcut>
+          </ContextMenuItem>
+        </ContextMenuGroup>
+        <ContextMenuSeparator />
         <ContextMenuGroup>
           <ContextMenuItem onClick={onNewFolder}>
             <FolderPlusIcon />

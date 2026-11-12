@@ -52,8 +52,9 @@ o aluno conclui uma etapa, com status e nota por link:
 ## Funcionalidades
 
 - **Explorador de atividades e pastas** com árvore na sidebar, busca global,
-  seleção múltipla, arrastar e soltar, renomear, mover e duplicar. A troca de
-  pasta é instantânea (o dataset é carregado uma vez por entrada no painel).
+  seleção múltipla, arrastar e soltar, renomear, mover, duplicar e
+  copiar/recortar e colar com `Ctrl+C`, `Ctrl+X` e `Ctrl+V`. A troca de pasta é
+  instantânea (o dataset é carregado uma vez por entrada no painel).
 - **Editor de atividade** com links em sequência, senha de liberação, ordem dos
   links e opção de embaralhar a ordem por aluno.
 - **Código de entrada** por atividade, com encerramento e reabertura.

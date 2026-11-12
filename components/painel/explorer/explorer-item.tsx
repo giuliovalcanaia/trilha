@@ -3,6 +3,7 @@
 import * as React from "react"
 import {
   ClipboardCopyIcon,
+  ClipboardPasteIcon,
   CopyIcon,
   EyeIcon,
   EyeOffIcon,
@@ -14,6 +15,7 @@ import {
   LoaderCircleIcon,
   PencilIcon,
   PlusIcon,
+  ScissorsIcon,
   Share2Icon,
   Trash2Icon,
 } from "lucide-react"
@@ -57,6 +59,11 @@ type ExplorerItemProps = {
   onRename: () => void
   onDuplicate: () => void
   onMove: () => void
+  onCopy: () => void
+  onCut: () => void
+  onPaste: () => void
+  podeColar: boolean
+  recortado: boolean
   onToggleAtiva: () => void
   onCopyCode: (codigo: string) => void
   onTrash: () => void
@@ -85,6 +92,11 @@ export function ExplorerItemView({
   onRename,
   onDuplicate,
   onMove,
+  onCopy,
+  onCut,
+  onPaste,
+  podeColar,
+  recortado,
   onToggleAtiva,
   onCopyCode,
   onTrash,
@@ -122,10 +134,36 @@ export function ExplorerItemView({
       shortcut: "Enter",
       onSelect: onOpen,
     },
+    { kind: "separator", key: "sep-transferencia" },
+    {
+      kind: "item",
+      key: "copiar",
+      label: "Copiar",
+      icon: <CopyIcon />,
+      shortcut: "Ctrl+C",
+      onSelect: onCopy,
+    },
+    {
+      kind: "item",
+      key: "recortar",
+      label: "Recortar",
+      icon: <ScissorsIcon />,
+      shortcut: "Ctrl+X",
+      onSelect: onCut,
+    },
   ]
 
   if (pasta) {
     actions.push(
+      {
+        kind: "item",
+        key: "colar",
+        label: "Colar dentro",
+        icon: <ClipboardPasteIcon />,
+        shortcut: "Ctrl+V",
+        disabled: !podeColar,
+        onSelect: onPaste,
+      },
       { kind: "separator", key: "sep-acoes" },
       {
         kind: "item",
@@ -272,13 +310,14 @@ export function ExplorerItemView({
           selected &&
             "border-primary/60 bg-accent text-accent-foreground hover:ring-2 hover:ring-primary/40 hover:ring-inset",
           dropActive && "border-primary ring-2 ring-primary/40",
-          disabledDrop && "opacity-60",
+          (disabledDrop || recortado) && "opacity-60",
           abrindo && "cursor-progress"
         )}
         role="option"
         aria-selected={selected}
         aria-busy={abrindo || undefined}
         data-selected={selected}
+        data-recortado={recortado || undefined}
         data-selecionavel
         tabIndex={0}
         aria-label={nome}

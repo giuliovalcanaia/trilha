@@ -4,6 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import {
   ChevronRightIcon,
+  ClipboardPasteIcon,
   FolderPlusIcon,
   HouseIcon,
   LayoutGridIcon,
@@ -52,6 +53,9 @@ export function ExplorerToolbar({
   ordem,
   onOrdemChange,
   onNewFolder,
+  onPaste,
+  itensNaArea,
+  colando,
   newActivityHref,
   onDragOverTo,
   onDropTo,
@@ -66,6 +70,9 @@ export function ExplorerToolbar({
   ordem: OrdemExplorer
   onOrdemChange: (ordem: OrdemExplorer) => void
   onNewFolder: () => void
+  onPaste: () => void
+  itensNaArea: number
+  colando: boolean
   newActivityHref: string
   onDragOverTo: (event: React.DragEvent, pastaId: number | null) => void
   onDropTo: (event: React.DragEvent, pastaId: number | null) => void
@@ -151,6 +158,21 @@ export function ExplorerToolbar({
         />
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
+          {itensNaArea > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onPaste}
+              disabled={colando}
+              aria-label={`Colar ${itensNaArea} ${
+                itensNaArea === 1 ? "item" : "itens"
+              } nesta pasta`}
+              title="Colar (Ctrl+V)"
+            >
+              <ClipboardPasteIcon data-icon="inline-start" />
+              Colar
+            </Button>
+          )}
           <Button type="button" variant="outline" onClick={onNewFolder}>
             <FolderPlusIcon data-icon="inline-start" />
             Nova pasta

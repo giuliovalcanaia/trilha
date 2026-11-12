@@ -39,7 +39,8 @@ async function validarDestinoPasta(
   return null
 }
 
-export async function movePastaTo(
+/** Move a pasta sem revalidar; quem chama decide quando revalidar o painel. */
+export async function moverPasta(
   professor: ProfessorCtx,
   id: number,
   parentId: number | null
@@ -65,11 +66,22 @@ export async function movePastaTo(
     })
   }
 
-  revalidatePainel()
   return ok("Pasta movida.")
 }
 
-export async function moveAtividadeTo(
+export async function movePastaTo(
+  professor: ProfessorCtx,
+  id: number,
+  parentId: number | null
+): Promise<ActionResult> {
+  const resultado = await moverPasta(professor, id, parentId)
+  if (!resultado.error) revalidatePainel()
+
+  return resultado
+}
+
+/** Move a atividade sem revalidar; quem chama decide quando revalidar. */
+export async function moverAtividade(
   professor: ProfessorCtx,
   id: number,
   pastaId: number | null
@@ -99,6 +111,16 @@ export async function moveAtividadeTo(
     })
   }
 
-  revalidatePainel()
   return ok("Atividade movida.")
+}
+
+export async function moveAtividadeTo(
+  professor: ProfessorCtx,
+  id: number,
+  pastaId: number | null
+): Promise<ActionResult> {
+  const resultado = await moverAtividade(professor, id, pastaId)
+  if (!resultado.error) revalidatePainel()
+
+  return resultado
 }

@@ -34,6 +34,7 @@ export type MenuAction =
       label: string
       icon: React.ReactNode
       destructive?: boolean
+      disabled?: boolean
       shortcut?: string
       onSelect: () => void
     }
@@ -74,6 +75,7 @@ export function ContextMenuActions({ actions }: { actions: MenuAction[] }) {
       <ContextMenuItem
         key={action.key}
         variant={action.destructive ? "destructive" : "default"}
+        disabled={action.disabled}
         onClick={action.onSelect}
       >
         {action.icon}
@@ -115,6 +117,7 @@ export function DropdownMenuActions({ actions }: { actions: MenuAction[] }) {
       <DropdownMenuItem
         key={action.key}
         variant={action.destructive ? "destructive" : "default"}
+        disabled={action.disabled}
         onClick={action.onSelect}
       >
         {action.icon}
