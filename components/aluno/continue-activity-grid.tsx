@@ -1,34 +1,30 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { LoaderCircleIcon, SearchIcon } from "lucide-react"
+import type { RealtimeChannel } from "@supabase/supabase-js"
 
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { normalizarBusca } from "@/lib/dominio/busca"
 import { mensagemDoErro } from "@/lib/dominio/erros"
 import type { AlunoParaContinuar } from "@/lib/data/aluno"
 import { formatarDataHora } from "@/lib/format"
+import { avisarContinuar, canalContinuar } from "@/lib/supabase/broadcast"
 import { createClient } from "@/lib/supabase/client"
+import { assinarCanalRealtime } from "@/lib/supabase/realtime"
 import { cn } from "@/lib/utils"
+
+const INTERVALO_ATUALIZACAO = 10_000
 
 /**
  * Grade de nomes da aula anterior.
  *
- * A conexão é assumida com `continue_activity`; se o nome já estiver em uso,
- * uma confirmação avisa que o outro acesso será encerrado. O progresso nunca
- * é apagado — quem libera uma conexão errada é o professor, no painel.
+ * Um nome conectado fica esmaecido e desabilitado: quem libera a conexão é o
+ * professor, no painel, com "Derrubar". A lista se atualiza por um canal
+ * público de broadcast (claim/derrubar/entrada/expulsão avisam) e, como
+ * reserva, relê os nomes a cada 10s enquanto a aba está visível.
  */
 export function ContinueActivityGrid({
   codigo,
@@ -38,29 +34,64 @@ export function ContinueActivityGrid({
   alunos: AlunoParaContinuar[]
 }) {
   const router = useRouter()
+  const [supabase] = useState(() => createClient())
+  const [lista, setLista] = useState(alunos)
   const [busca, setBusca] = useState("")
   const [erro, setErro] = useState<string | null>(null)
   const [enviandoId, setEnviandoId] = useState<number | null>(null)
-  const [confirmando, setConfirmando] = useState<AlunoParaContinuar | null>(
-    null
-  )
+  // Reaproveita o canal que já está ouvindo a lista para avisar os outros.
+  // Criar um segundo canal com o mesmo tópico no mesmo cliente não entrega o
+  // broadcast de forma confiável.
+  const canalRef = useRef<RealtimeChannel | null>(null)
+
+  const atualizar = useCallback(async () => {
+    const { data } = await supabase.rpc("list_activity_students", {
+      p_codigo: codigo,
+    })
+
+    if (data) setLista(data)
+  }, [codigo, supabase])
+
+  useEffect(() => {
+    const pararCanal = assinarCanalRealtime(
+      supabase,
+      canalContinuar(codigo),
+      (canal) => {
+        canalRef.current = canal
+
+        return canal.on("broadcast", { event: "atualizar" }, () => {
+          void atualizar()
+        })
+      }
+    )
+
+    const intervalo = window.setInterval(() => {
+      if (document.visibilityState === "visible") void atualizar()
+    }, INTERVALO_ATUALIZACAO)
+
+    return () => {
+      pararCanal()
+      canalRef.current = null
+      window.clearInterval(intervalo)
+    }
+  }, [atualizar, codigo, supabase])
 
   const termo = normalizarBusca(busca.trim())
 
   const visiveis = useMemo(() => {
-    if (!termo) return alunos
+    if (!termo) return lista
 
-    return alunos.filter((aluno) =>
+    return lista.filter((aluno) =>
       normalizarBusca(aluno.aluno_nome).includes(termo)
     )
-  }, [alunos, termo])
+  }, [lista, termo])
 
   // Só mostra o horário de entrada quando o nome se repete: é o que ajuda a
   // diferenciar duas "Maria" na mesma turma.
   const nomesRepetidos = useMemo(() => {
     const contagem = new Map<string, number>()
 
-    for (const aluno of alunos) {
+    for (const aluno of lista) {
       const chave = normalizarBusca(aluno.aluno_nome)
       contagem.set(chave, (contagem.get(chave) ?? 0) + 1)
     }
@@ -68,15 +99,14 @@ export function ContinueActivityGrid({
     return new Set(
       [...contagem].filter(([, total]) => total > 1).map(([nome]) => nome)
     )
-  }, [alunos])
+  }, [lista])
 
   async function continuar(aluno: AlunoParaContinuar) {
-    if (enviandoId !== null) return
+    if (enviandoId !== null || aluno.em_uso) return
 
     setErro(null)
     setEnviandoId(aluno.participacao_id)
 
-    const supabase = createClient()
     const { data: claims } = await supabase.auth.getClaims()
 
     if (!claims?.claims) {
@@ -100,25 +130,31 @@ export function ContinueActivityGrid({
         mensagemDoErro(error.code) ??
           "Não foi possível continuar a atividade. Tente novamente."
       )
+
+      if (error.code === "TRL33") void atualizar()
       return
+    }
+
+    // Avisa antes de navegar: sem isso as outras listas só mudariam no
+    // próximo polling. O canal da própria grade já está assinado; se ele
+    // ainda não estiver pronto, cai no canal temporário.
+    const canal = canalRef.current
+
+    if (canal) {
+      await canal
+        .send({ type: "broadcast", event: "atualizar", payload: {} })
+        .catch(() => undefined)
+    } else {
+      await avisarContinuar(supabase, codigo)
     }
 
     router.push(`/atividade?codigo=${encodeURIComponent(codigo)}`)
     router.refresh()
   }
 
-  function escolher(aluno: AlunoParaContinuar) {
-    if (aluno.em_uso) {
-      setConfirmando(aluno)
-      return
-    }
-
-    void continuar(aluno)
-  }
-
   return (
     <div className="flex flex-col gap-4">
-      {alunos.length > 8 && (
+      {lista.length > 8 && (
         <div className="relative">
           <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -154,8 +190,8 @@ export function ContinueActivityGrid({
               <button
                 key={aluno.participacao_id}
                 type="button"
-                onClick={() => escolher(aluno)}
-                disabled={enviandoId !== null}
+                onClick={() => void continuar(aluno)}
+                disabled={aluno.em_uso || enviandoId !== null}
                 aria-busy={enviando || undefined}
                 aria-label={`Continuar como ${aluno.aluno_nome}`}
                 className={cn(
@@ -186,39 +222,6 @@ export function ContinueActivityGrid({
           })}
         </div>
       )}
-
-      <AlertDialog
-        open={confirmando !== null}
-        onOpenChange={(open) => {
-          if (!open) setConfirmando(null)
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Continuar como {confirmando?.aluno_nome}?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Este nome está conectado em outro dispositivo. Se você continuar,
-              o acesso anterior será encerrado. O progresso é mantido.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <Button
-              type="button"
-              disabled={enviandoId !== null}
-              onClick={() => {
-                const aluno = confirmando
-                setConfirmando(null)
-                if (aluno) void continuar(aluno)
-              }}
-            >
-              Continuar
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

@@ -25,6 +25,7 @@ type ConfirmActionProps = {
   description: string
   confirmLabel?: string
   confirmVariant?: "default" | "destructive"
+  onSuccess?: () => void
   triggerLabel?: string
   trigger?: ReactElement
 }
@@ -36,6 +37,7 @@ export function ConfirmAction({
   description,
   confirmLabel = "Excluir",
   confirmVariant = "destructive",
+  onSuccess,
   triggerLabel = "Excluir",
   trigger,
 }: ConfirmActionProps) {
@@ -62,7 +64,10 @@ export function ConfirmAction({
           <ActionForm
             action={action}
             className="contents"
-            onSuccess={() => setOpen(false)}
+            onSuccess={() => {
+              setOpen(false)
+              onSuccess?.()
+            }}
           >
             {Object.entries(fields).map(([name, value]) => (
               <input key={name} type="hidden" name={name} value={value} />

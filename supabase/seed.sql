@@ -246,7 +246,7 @@ begin
     nome,
     conexao_estudante_id
   )
-  values (v_aplicacao_id, v_estudante_id, 'Maria', v_estudante_id)
+  values (v_aplicacao_id, v_estudante_id, 'Maria', null)
   returning id into v_participacao_id;
 
   select id into v_primeiro_link

@@ -3,9 +3,9 @@ import { test, expect, type Page } from "@playwright/test"
 /**
  * Continuar a atividade de outro dia.
  *
- * Usa o seed: a atividade "Daily Routines" (código TESTE1) já tem a Maria
- * conectada. O aluno assume o nome dela e o professor derruba a conexão sem
- * apagar o progresso.
+ * Usa o seed: a atividade "Daily Routines" (código TESTE1) já tem a Maria, mas
+ * sem conexão. O primeiro aluno assume o nome; o segundo vê o nome esmaecido
+ * e desabilitado até o professor derrubar a conexão, sem perder o progresso.
  */
 
 const PROFESSOR = { email: "professor@trilha.test", senha: "senha123" }
@@ -31,38 +31,52 @@ async function loginProfessor(page: Page) {
   await page.waitForURL("**/painel")
 }
 
-test("aluno continua pelo nome e professor derruba a conexão", async ({
+async function abrirListaDeNomes(page: Page) {
+  await page.goto("/")
+  await esperarHidratacao(page)
+  await page.locator('input[name="codigoAula"]').fill(CODIGO)
+  await page.getByRole("button", { name: "Entrar" }).click()
+  await page.waitForURL(`**/aluno?codigo=${CODIGO}`)
+
+  await page.getByRole("link", { name: "Continuar atividade" }).click()
+  await page.waitForURL(`**/aluno/continuar?codigo=${CODIGO}`)
+}
+
+test("nome conectado fica indisponível até o professor derrubar", async ({
   page,
   browser,
 }) => {
-  const contextoAluno = await browser.newContext()
-  const aluno = await contextoAluno.newPage()
+  const contextoA = await browser.newContext()
+  const contextoB = await browser.newContext()
+  const alunoA = await contextoA.newPage()
+  const alunoB = await contextoB.newPage()
 
-  // 1. Aluno entra com o código e vê o botão fixo no canto inferior esquerdo.
-  await aluno.goto("/")
-  await esperarHidratacao(aluno)
-  await aluno.locator('input[name="codigoAula"]').fill(CODIGO)
-  await aluno.getByRole("button", { name: "Entrar" }).click()
-  await aluno.waitForURL(`**/aluno?codigo=${CODIGO}`)
+  // 1. Os dois alunos abrem a lista de nomes; Maria ainda está disponível.
+  await abrirListaDeNomes(alunoA)
+  await abrirListaDeNomes(alunoB)
 
-  const continuar = aluno.getByRole("link", { name: "Continuar atividade" })
-  await expect(continuar).toBeVisible()
-  await continuar.click()
-  await aluno.waitForURL(`**/aluno/continuar?codigo=${CODIGO}`)
+  const mariaA = alunoA.getByRole("button", {
+    name: `Continuar como ${NOME}`,
+  })
+  const mariaB = alunoB.getByRole("button", {
+    name: `Continuar como ${NOME}`,
+  })
 
-  // 2. Maria já está conectada pelo seed: confirma a troca e cai na atividade.
-  await aluno.getByRole("button", { name: `Continuar como ${NOME}` }).click()
+  await expect(mariaA).toBeEnabled()
+  await expect(mariaB).toBeEnabled()
 
-  const confirmacao = aluno.getByRole("alertdialog")
-  await expect(confirmacao).toBeVisible()
-  await confirmacao.getByRole("button", { name: "Continuar" }).click()
-
-  await aluno.waitForURL(`**/atividade?codigo=${CODIGO}`)
+  // 2. O aluno A assume o nome e cai direto na atividade.
+  await mariaA.click()
+  await alunoA.waitForURL(`**/atividade?codigo=${CODIGO}`)
   await expect(
-    aluno.getByRole("heading", { name: `Daily Routines - ${NOME}` })
+    alunoA.getByRole("heading", { name: `Daily Routines - ${NOME}` })
   ).toBeVisible()
 
-  // 3. Professor abre a atividade e derruba a conexão de Maria.
+  // 3. O aluno B vê o nome esmaecido e desabilitado, sem conseguir clicar.
+  await expect(mariaB).toBeDisabled({ timeout: 20_000 })
+  await expect(alunoB.getByText("Em uso", { exact: true })).toBeVisible()
+
+  // 4. Professor derruba a conexão de Maria.
   await loginProfessor(page)
   await page.getByRole("option", { name: "Aulas", exact: true }).dblclick()
   await page
@@ -85,20 +99,22 @@ test("aluno continua pelo nome e professor derruba a conexão", async ({
     page.getByText("Sem conexão", { exact: true }).first()
   ).toBeVisible()
 
-  // 4. O aluno perde a conexão ao recarregar e volta para a tela de nomes.
-  await aluno.reload()
-  await aluno.waitForURL(`**/aluno?codigo=${CODIGO}`)
+  // 5. O aluno B vê Maria liberada e assume o nome.
+  await expect(mariaB).toBeEnabled({ timeout: 20_000 })
+  await expect(alunoB.getByText("Em uso", { exact: true })).toHaveCount(0)
+  await mariaB.click()
+  await alunoB.waitForURL(`**/atividade?codigo=${CODIGO}`)
   await expect(
-    aluno.getByRole("link", { name: "Continuar atividade" })
+    alunoB.getByRole("heading", { name: `Daily Routines - ${NOME}` })
   ).toBeVisible()
 
-  // 5. Sem ninguém com o nome, continua direto.
-  await aluno.getByRole("link", { name: "Continuar atividade" }).click()
-  await aluno.getByRole("button", { name: `Continuar como ${NOME}` }).click()
-  await aluno.waitForURL(`**/atividade?codigo=${CODIGO}`)
+  // 6. O aluno A perdeu a conexão e volta para a tela de nomes.
+  await alunoA.reload()
+  await alunoA.waitForURL(`**/aluno?codigo=${CODIGO}`)
   await expect(
-    aluno.getByRole("heading", { name: `Daily Routines - ${NOME}` })
+    alunoA.getByRole("link", { name: "Continuar atividade" })
   ).toBeVisible()
 
-  await contextoAluno.close()
+  await contextoA.close()
+  await contextoB.close()
 })

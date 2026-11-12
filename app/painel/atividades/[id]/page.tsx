@@ -257,6 +257,7 @@ export default async function Page({
                                       atividadeId={atividade.id}
                                       participacaoId={aluno.id}
                                       nome={aluno.nome}
+                                      codigo={aplicacao.codigo}
                                     />
                                   }
                                   acao={
@@ -305,6 +306,7 @@ export default async function Page({
                                           atividadeId={atividade.id}
                                           participacaoId={aluno.id}
                                           nome={aluno.nome}
+                                          codigo={aplicacao.codigo}
                                           conectado={
                                             aluno.conexao_estudante_id !== null
                                           }

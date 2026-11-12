@@ -37,6 +37,7 @@ export const ERROS = {
   TRL30: "Direção inválida.",
   TRL31: "Não foi possível gerar o código de entrada.",
   TRL32: "Muitas tentativas de senha. Aguarde um minuto e tente de novo.",
+  TRL33: "Este nome já está conectado. Peça ao professor para liberar.",
 } as const
 
 export type CodigoErro = keyof typeof ERROS

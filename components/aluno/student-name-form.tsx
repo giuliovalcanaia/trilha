@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { mensagemDoErro } from "@/lib/dominio/erros"
+import { avisarContinuar } from "@/lib/supabase/broadcast"
 import { createClient } from "@/lib/supabase/client"
 
 export function StudentNameForm({ codigo }: { codigo: string }) {
@@ -55,6 +56,8 @@ export function StudentNameForm({ codigo }: { codigo: string }) {
       )
       return
     }
+
+    void avisarContinuar(supabase, codigo)
 
     router.push(`/atividade?codigo=${encodeURIComponent(codigo)}`)
     router.refresh()

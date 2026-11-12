@@ -5,6 +5,8 @@ import { UserXIcon } from "lucide-react"
 import { expelStudent } from "@/app/painel/actions/aluno"
 import { ConfirmAction } from "@/components/painel/confirm-action"
 import { Button } from "@/components/ui/button"
+import { avisarContinuar } from "@/lib/supabase/broadcast"
+import { createClient } from "@/lib/supabase/client"
 
 /**
  * Expulsão de um aluno da atividade. O servidor marca a participação como
@@ -14,10 +16,12 @@ export function ExpelStudentButton({
   atividadeId,
   participacaoId,
   nome,
+  codigo,
 }: {
   atividadeId: number
   participacaoId: number
   nome: string
+  codigo: string
 }) {
   return (
     <ConfirmAction
@@ -29,6 +33,9 @@ export function ExpelStudentButton({
       title={`Expulsar ${nome}?`}
       description="O progresso deste aluno nesta atividade será apagado. Ele será avisado e voltará para a tela de nome, onde pode entrar novamente."
       confirmLabel="Expulsar"
+      onSuccess={() => {
+        void avisarContinuar(createClient(), codigo)
+      }}
       triggerLabel={`Expulsar ${nome}`}
       trigger={
         <Button variant="destructive" size="sm" type="button">

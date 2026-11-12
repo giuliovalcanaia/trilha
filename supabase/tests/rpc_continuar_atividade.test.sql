@@ -1,12 +1,12 @@
--- Continuar a atividade em outro dia: o aluno assume uma participação
--- existente pelo nome, o progresso vai junto, o professor pode derrubar a
--- conexão sem apagar nada e a última conexão vence.
+-- Continuar a atividade em outro dia: o aluno assume uma participação livre,
+-- um nome conectado não pode ser tomado por outro aluno, o professor derruba
+-- a conexão sem apagar o progresso e o aluno original pode reassumir depois.
 begin;
 
 create extension if not exists pgtap with schema extensions;
 set local search_path to public, extensions;
 
-select plan(19);
+select plan(21);
 
 insert into auth.users (id, email, is_anonymous) values
   ('00000000-0000-0000-0000-0000000000d1', 'prof-cont@trilha.test', false),
@@ -102,7 +102,42 @@ reset role;
 select id as participacao_bia
 from public.participacoes where nome = 'Bia' \gset
 
--- B continua a atividade escolhendo o nome de Ana.
+-- Ana está conectada: B não pode tomar o nome.
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-0000000000e2","role":"authenticated"}',
+  true
+);
+
+select throws_ok(
+  format(
+    $$select public.continue_activity('CONT01', %s)$$,
+    :participacao_ana
+  ),
+  'TRL33',
+  'participation_in_use',
+  'continue_activity recusa um nome já conectado'
+);
+
+-- Professor derruba a conexão e B assume o nome livre.
+reset role;
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-0000000000d1","role":"authenticated"}',
+  true
+);
+
+select public.release_participation(:participacao_ana);
+reset role;
+
+select is(
+  (select conexao_estudante_id from public.participacoes where id = :participacao_ana),
+  null::bigint,
+  'release_participation limpa a conexão'
+);
+
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
@@ -116,7 +151,7 @@ select is(
   (select conexao_estudante_id from public.participacoes where id = :participacao_ana),
   (select id from public.estudantes
    where user_id = '00000000-0000-0000-0000-0000000000e2'),
-  'continue_activity conecta a sessão ao nome escolhido'
+  'continue_activity conecta a sessão ao nome livre'
 );
 
 select is(
@@ -134,6 +169,16 @@ select is(
   ),
   'fazendo',
   'o progresso do nome escolhido fica visível para B'
+);
+
+select is(
+  (
+    select em_uso
+    from public.list_activity_students('CONT01')
+    where aluno_nome = 'Ana'
+  ),
+  true,
+  'a lista marca o nome conectado como em uso'
 );
 
 select public.complete_link(:aplicacao_id, :link_1, 'aula123', 8);
@@ -176,7 +221,17 @@ select throws_ok(
   'a escrita do aluno original é recusada'
 );
 
--- Professor derruba a conexão: o progresso fica intacto.
+select throws_ok(
+  format(
+    $$select public.continue_activity('CONT01', %s)$$,
+    :participacao_ana
+  ),
+  'TRL33',
+  'participation_in_use',
+  'o aluno original também não toma o nome enquanto B está conectado'
+);
+
+-- Professor derruba de novo: o progresso continua e o original reassume.
 reset role;
 set local role authenticated;
 select set_config(
@@ -187,12 +242,6 @@ select set_config(
 
 select public.release_participation(:participacao_ana);
 reset role;
-
-select is(
-  (select conexao_estudante_id from public.participacoes where id = :participacao_ana),
-  null::bigint,
-  'release_participation limpa a conexão'
-);
 
 select is(
   (
@@ -220,24 +269,6 @@ select is(
   'Ana aparece desconectada depois do derrubar'
 );
 
--- B reconecta; depois o aluno original reassume (última conexão vence).
-set local role authenticated;
-select set_config(
-  'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-0000000000e2","role":"authenticated"}',
-  true
-);
-
-select public.continue_activity('CONT01', :participacao_ana);
-
-select is(
-  (select conexao_estudante_id from public.participacoes where id = :participacao_ana),
-  (select id from public.estudantes
-   where user_id = '00000000-0000-0000-0000-0000000000e2'),
-  'B consegue reconectar depois do derrubar'
-);
-
-reset role;
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
@@ -250,7 +281,7 @@ select public.continue_activity('CONT01', :participacao_ana);
 select is(
   (select conexao_estudante_id from public.participacoes where id = :participacao_ana),
   :estudante_ana::bigint,
-  'o aluno original pode reassumir o próprio nome'
+  'o aluno original pode reassumir o próprio nome depois do derrubar'
 );
 
 -- Código de outra atividade não pode ser usado para assumir a participação.
