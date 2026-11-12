@@ -54,7 +54,7 @@ export const getParticipacaoDoAluno = cache(async (codigo: string) => {
     .from("participacoes")
     .select("id, nome, iniciado_em, concluido_em, expulso_em")
     .eq("aplicacao_id", aplicacao.id)
-    .eq("estudante_id", estudante.id)
+    .eq("conexao_estudante_id", estudante.id)
     .maybeSingle()
 
   if (participacaoError) throw new Error("participacao_lookup_failed")

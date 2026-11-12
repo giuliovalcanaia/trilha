@@ -65,6 +65,9 @@ o aluno conclui uma etapa, com status e nota por link:
   pela aba **Alunos** do painel.
 - **Acompanhamento em tempo real** dos alunos e do progresso via Supabase
   Realtime, com correção de status e nota que também libera a próxima etapa.
+- **Continuar a atividade em outro dia**: o aluno escolhe o próprio nome na
+  lista da turma e retoma o progresso; o professor derruba uma conexão errada
+  sem apagar as notas nem o andamento.
 - **Lixeira reversível** com restauração e exclusão definitiva.
 - **Compartilhamento de pastas** entre professores, com acesso de editor.
 - **Expulsão de aluno** com reinício do progresso ao entrar de novo.

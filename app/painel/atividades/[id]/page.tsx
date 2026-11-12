@@ -21,6 +21,7 @@ import { LinksProtectedTabs } from "@/components/painel/links-protected-tabs"
 import { LinksSaveForm } from "@/components/painel/links-save-form"
 import { PreviewActivityButton } from "@/components/painel/preview-activity-button"
 import { ProgressoAlunoForm } from "@/components/painel/progresso-aluno-form"
+import { ReleaseConnectionButton } from "@/components/painel/release-connection-button"
 import { SenhaField } from "@/components/painel/senha-field"
 import { ShuffleLinksCard } from "@/components/painel/shuffle-links-card"
 import { SubmitButton } from "@/components/painel/submit-button"
@@ -281,6 +282,34 @@ export default async function Page({
                                   }
                                   detalhe={
                                     <>
+                                      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed p-3">
+                                        <div className="flex items-center gap-2">
+                                          <Badge
+                                            variant={
+                                              aluno.conexao_estudante_id
+                                                ? "default"
+                                                : "secondary"
+                                            }
+                                          >
+                                            {aluno.conexao_estudante_id
+                                              ? "Conectado"
+                                              : "Sem conexão"}
+                                          </Badge>
+                                          <span className="text-xs text-muted-foreground">
+                                            {aluno.conexao_estudante_id
+                                              ? "Uma sessão está com este nome."
+                                              : "Nenhuma sessão está com este nome."}
+                                          </span>
+                                        </div>
+                                        <ReleaseConnectionButton
+                                          atividadeId={atividade.id}
+                                          participacaoId={aluno.id}
+                                          nome={aluno.nome}
+                                          conectado={
+                                            aluno.conexao_estudante_id !== null
+                                          }
+                                        />
+                                      </div>
                                       {ordemSorteada && (
                                         <p className="flex items-center gap-1 text-xs text-muted-foreground">
                                           <ShuffleIcon className="size-3" />

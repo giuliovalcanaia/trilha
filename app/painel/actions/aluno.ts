@@ -23,6 +23,11 @@ const expelStudentSchema = z.object({
   participacao_id: requiredId("Aluno inválido."),
 })
 
+const releaseConnectionSchema = z.object({
+  atividade_id: requiredId("Aluno inválido."),
+  participacao_id: requiredId("Aluno inválido."),
+})
+
 export async function updateStudentProgress(
   _prev: ActionResult,
   formData: FormData
@@ -80,6 +85,31 @@ export async function expelStudent(
 
       revalidatePainel(`/painel/atividades/${atividade_id}`)
       return ok("Aluno expulso da atividade.")
+    }
+  )
+}
+
+export async function releaseStudentConnection(
+  _prev: ActionResult,
+  formData: FormData
+): Promise<ActionResult> {
+  return withProfessorForm(
+    "releaseStudentConnection",
+    releaseConnectionSchema,
+    formData,
+    async (professor, { atividade_id, participacao_id }) => {
+      const { error } = await professor.supabase.rpc("release_participation", {
+        p_participacao_id: participacao_id,
+      })
+
+      if (error) {
+        return falhaDeRpc(error, "Não foi possível derrubar a conexão.", {
+          TRL27: "Este aluno não está mais nesta atividade.",
+        })
+      }
+
+      revalidatePainel(`/painel/atividades/${atividade_id}`)
+      return ok("Conexão encerrada. O progresso foi mantido.")
     }
   )
 }

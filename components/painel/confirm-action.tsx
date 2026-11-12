@@ -24,6 +24,7 @@ type ConfirmActionProps = {
   title: string
   description: string
   confirmLabel?: string
+  confirmVariant?: "default" | "destructive"
   triggerLabel?: string
   trigger?: ReactElement
 }
@@ -34,6 +35,7 @@ export function ConfirmAction({
   title,
   description,
   confirmLabel = "Excluir",
+  confirmVariant = "destructive",
   triggerLabel = "Excluir",
   trigger,
 }: ConfirmActionProps) {
@@ -66,7 +68,7 @@ export function ConfirmAction({
               <input key={name} type="hidden" name={name} value={value} />
             ))}
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <SubmitButton variant="destructive">{confirmLabel}</SubmitButton>
+            <SubmitButton variant={confirmVariant}>{confirmLabel}</SubmitButton>
           </ActionForm>
         </AlertDialogFooter>
       </AlertDialogContent>
