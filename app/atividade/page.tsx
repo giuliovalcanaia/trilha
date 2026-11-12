@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 
+import { LeaveActivityButton } from "@/components/aluno/leave-activity-button"
 import { StudentActivityHeader } from "@/components/aluno/student-activity-header"
 import { StudentActivityRealtime } from "@/components/aluno/student-activity-realtime"
 import { StudentConnectionHeartbeat } from "@/components/aluno/student-connection-heartbeat"
@@ -163,6 +164,13 @@ export default async function Page({
         }
         concluidas={concluidas}
         total={items.length}
+        acao={
+          <LeaveActivityButton
+            aplicacaoId={aplicacao.id}
+            codigo={codigoEntrada}
+            nome={participacao.nome}
+          />
+        }
       />
 
       <div className="m-4 mt-8 mb-[calc(1rem_+_env(safe-area-inset-bottom))]">

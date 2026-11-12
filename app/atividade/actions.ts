@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { redirect } from "next/navigation"
 
 import { fail, type ActionResult } from "@/lib/actions/result"
 import { falhaDeRpc } from "@/lib/actions/rpc-error"
@@ -91,4 +92,31 @@ export async function completeLink(
 
   revalidatePath("/atividade")
   return { error: null }
+}
+
+/**
+ * "Sair" da atividade: libera a conexão na hora (sem esperar o beacon de 15s)
+ * e volta para a grade de nomes, para o aluno escolher outro nome. O
+ * progresso do nome anterior fica salvo — sair não apaga nada.
+ */
+export async function sairDaAtividade(
+  aplicacaoId: number,
+  codigo: string
+): Promise<ActionResult> {
+  const aluno = await getEstudante()
+
+  if (!aluno) {
+    redirect(`/aluno?codigo=${encodeURIComponent(codigo)}`)
+  }
+
+  const { error } = await aluno.supabase.rpc("leave_activity", {
+    p_aplicacao_id: aplicacaoId,
+  })
+
+  if (error) {
+    return falhaDeRpc(error, "Não foi possível sair da atividade.")
+  }
+
+  revalidatePath("/atividade")
+  redirect(`/aluno/continuar?codigo=${encodeURIComponent(codigo)}`)
 }

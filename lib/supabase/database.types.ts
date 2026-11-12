@@ -511,6 +511,10 @@ export type Database = {
         Args: { p_codigo: string; p_nome: string }
         Returns: Json
       }
+      leave_activity: {
+        Args: { p_aplicacao_id: number }
+        Returns: boolean
+      }
       list_activity_students: {
         Args: { p_codigo: string }
         Returns: {
