@@ -65,12 +65,12 @@ export default async function Page({
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center gap-4 p-4 pt-16">
-      <div className="fixed top-4 left-4 z-20">
+      <div className="fixed top-[calc(1rem_+_env(safe-area-inset-top))] left-[calc(1rem_+_env(safe-area-inset-left))] z-20">
         <Link
           href={`/aluno?codigo=${encodeURIComponent(codigoAtividade)}`}
           className={cn(
             buttonVariants({ variant: "ghost" }),
-            "bg-background/95 backdrop-blur"
+            "min-h-11 bg-background/95 backdrop-blur sm:min-h-0"
           )}
         >
           <ArrowLeftIcon data-icon="inline-start" />

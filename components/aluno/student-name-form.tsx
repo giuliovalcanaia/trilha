@@ -75,8 +75,13 @@ export function StudentNameForm({ codigo }: { codigo: string }) {
           value={nome}
           onChange={(event) => setNome(event.target.value)}
           disabled={loading}
+          className="min-h-11 sm:min-h-0"
         />
-        <Button type="submit" disabled={loading}>
+        <Button
+          type="submit"
+          disabled={loading}
+          className="min-h-11 sm:min-h-0"
+        >
           {loading ? "Entrando..." : "Pronto"}
         </Button>
       </Field>

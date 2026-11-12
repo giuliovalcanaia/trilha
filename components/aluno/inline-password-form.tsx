@@ -184,7 +184,7 @@ export function InlinePasswordForm({
             disabled={bloqueado}
             aria-invalid={erroNota ? true : undefined}
             aria-describedby={erroNota ? erroNotaId : undefined}
-            className="w-24"
+            className="min-h-11 w-24 sm:min-h-0"
           />
           {erroNota && <FieldError id={erroNotaId}>{erroNota}</FieldError>}
         </Field>
@@ -209,14 +209,17 @@ export function InlinePasswordForm({
               disabled={bloqueado}
               aria-invalid={erro ? true : undefined}
               aria-describedby={erro ? erroId : undefined}
-              className={cn("w-32", "[-webkit-text-security:disc]")}
+              className={cn(
+                "min-h-11 w-32 sm:min-h-0",
+                "[-webkit-text-security:disc]"
+              )}
             />
             <Button
               type="submit"
               size="sm"
               disabled={bloqueado}
               aria-label={`Concluir ${titulo}`}
-              className="min-w-11"
+              className="min-h-11 min-w-11 sm:min-h-0"
             >
               {concluido ? (
                 <CheckIcon />

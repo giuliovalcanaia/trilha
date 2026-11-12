@@ -57,6 +57,9 @@ export const metadata: Metadata = {
 // manifest, que pinta a moldura do app instalado e aceita um valor só).
 export const viewport: Viewport = {
   colorScheme: "light dark",
+  // `cover` faz o app ocupar a tela inteira; os `env(safe-area-inset-*)` das
+  // telas do aluno compensam o notch e o home indicator do iPhone.
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },

@@ -69,9 +69,13 @@ export function JoinCodeForm() {
           value={codigo}
           onChange={(event) => setCodigo(event.target.value)}
           disabled={loading}
-          className="uppercase placeholder:normal-case"
+          className="min-h-11 uppercase placeholder:normal-case sm:min-h-0"
         />
-        <Button type="submit" disabled={loading}>
+        <Button
+          type="submit"
+          disabled={loading}
+          className="min-h-11 sm:min-h-0"
+        >
           {loading ? "Verificando..." : "Entrar"}
         </Button>
       </Field>

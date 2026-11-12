@@ -72,14 +72,14 @@ export default async function Page({
       </Card>
 
       {podeContinuar && (
-        <div className="fixed bottom-4 left-4 z-20">
+        <div className="fixed bottom-[calc(1rem_+_env(safe-area-inset-bottom))] left-[calc(1rem_+_env(safe-area-inset-left))] z-20">
           <Link
             href={`/aluno/continuar?codigo=${encodeURIComponent(
               codigoAtividade
             )}`}
             className={cn(
               buttonVariants({ variant: "outline" }),
-              "bg-background/95 shadow-md backdrop-blur"
+              "min-h-11 bg-background/95 shadow-md backdrop-blur sm:min-h-0"
             )}
           >
             <UsersIcon data-icon="inline-start" />

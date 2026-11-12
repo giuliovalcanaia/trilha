@@ -165,7 +165,7 @@ export default async function Page({
         total={items.length}
       />
 
-      <div className="m-4 mt-8">
+      <div className="m-4 mt-8 mb-[calc(1rem_+_env(safe-area-inset-bottom))]">
         {items.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Esta atividade ainda não tem links.

@@ -33,7 +33,7 @@ export function StudentActivityHeader({
     total > 0 ? Math.round((concluidas / total) * 100) : 0
 
   return (
-    <header className="sticky top-0 z-30 border-b bg-background/95 px-4 pt-3 pb-3 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b bg-background/95 pt-[calc(0.75rem_+_env(safe-area-inset-top))] pr-[calc(1rem_+_env(safe-area-inset-right))] pb-3 pl-[calc(1rem_+_env(safe-area-inset-left))] backdrop-blur">
       <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
         {titulo}
       </h1>
