@@ -94,3 +94,64 @@ test("aluno e professor editam o nome, e a tela do aluno acompanha", async ({
   await aluno.close()
   await contextoAluno.close()
 })
+
+test("edição no lugar salva sozinho, mantém o foco e não move o layout", async ({
+  browser,
+}) => {
+  const contexto = await browser.newContext()
+  const aluno = await contexto.newPage()
+
+  await entrarComoAluno(aluno, "Ana Auto")
+
+  const cabecalho = aluno.locator("header h1")
+  const botaoDoNome = aluno.locator("header h1 button")
+  const subtitulo = aluno.locator("header p").first()
+
+  const alturaAntes = await cabecalho.boundingBox()
+  const subtituloAntes = await subtitulo.boundingBox()
+
+  await botaoDoNome.click()
+  const campo = aluno.getByLabel("Nome do aluno")
+  await expect(campo).toBeFocused()
+
+  // Abrir a edição não pode mexer na altura do título nem empurrar o que vem
+  // abaixo (era o que acontecia com um <input>).
+  const alturaDepois = await cabecalho.boundingBox()
+  const subtituloDepois = await subtitulo.boundingBox()
+  expect(Math.round(alturaDepois?.height ?? 0)).toBe(
+    Math.round(alturaAntes?.height ?? 0)
+  )
+  expect(Math.round(alturaDepois?.y ?? 0)).toBe(Math.round(alturaAntes?.y ?? 0))
+  expect(Math.round(subtituloDepois?.y ?? 0)).toBe(
+    Math.round(subtituloAntes?.y ?? 0)
+  )
+
+  // Digita devagar, para no meio e espera o salvamento automático: o campo
+  // continua aberto e com o foco, e o texto novo já está no servidor.
+  await aluno.keyboard.type(" Silva")
+  await aluno.waitForTimeout(6000)
+
+  await expect(campo).toBeFocused()
+  await expect(cabecalho).toContainText("Ana Auto Silva")
+
+  // Esc fecha a edição; o nome exibido vem do servidor, então isto prova que
+  // o salvamento automático gravou de verdade.
+  await campo.press("Escape")
+  await expect(botaoDoNome).toHaveText("Ana Auto Silva")
+
+  // Sair do campo (clique fora) também salva e fecha.
+  await botaoDoNome.click()
+  await aluno.getByLabel("Nome do aluno").fill("Ana Blur")
+  await aluno.locator("header p").first().click()
+  await expect(botaoDoNome).toHaveText("Ana Blur")
+
+  // Esc descarta o que estava sendo digitado e mantém o nome salvo.
+  await botaoDoNome.click()
+  const campoCancelado = aluno.getByLabel("Nome do aluno")
+  await campoCancelado.fill("Não Salvar")
+  await campoCancelado.press("Escape")
+  await expect(botaoDoNome).toHaveText("Ana Blur")
+
+  await aluno.close()
+  await contexto.close()
+})
