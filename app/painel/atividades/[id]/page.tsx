@@ -30,7 +30,6 @@ import { UnsavedChangesGuard } from "@/components/painel/unsaved-changes-guard"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -350,20 +349,20 @@ export default async function Page({
             </p>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Links</CardTitle>
-                <CardDescription>
-                  A ordem das linhas é a ordem original, usada na
-                  pré-visualização e por quem entrou antes do embaralhamento. Na
-                  aba Alunos, cada aluno aparece na sequência que vê na tela.
-                  Salve para aplicar as mudanças.
-                </CardDescription>
-                <CardAction>
-                  <div className="flex flex-wrap items-center justify-end gap-2">
-                    <PreviewActivityButton atividadeId={atividade.id} />
-                    <LinksSaveForm atividadeId={atividade.id} />
-                  </div>
-                </CardAction>
+              <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 space-y-1">
+                  <CardTitle>Links</CardTitle>
+                  <CardDescription>
+                    A ordem das linhas é a ordem original, usada na
+                    pré-visualização e por quem entrou antes do embaralhamento.
+                    Na aba Alunos, cada aluno aparece na sequência que vê na
+                    tela. Salve para aplicar as mudanças.
+                  </CardDescription>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                  <PreviewActivityButton atividadeId={atividade.id} />
+                  <LinksSaveForm atividadeId={atividade.id} />
+                </div>
               </CardHeader>
               <CardContent>
                 <LinksEditorTextarea />
