@@ -16,6 +16,7 @@ import { getParticipacaoDoAluno } from "@/lib/auth/estudante"
 import { getProfessor } from "@/lib/auth/professor"
 import { getAlunosParaContinuar } from "@/lib/data/aluno"
 import { createClient } from "@/lib/supabase/server"
+import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
   title: "Continuar atividade",
@@ -62,7 +63,20 @@ export default async function Page({
   )
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center gap-4 p-4">
+    <div className="flex min-h-screen w-full flex-col items-center justify-center gap-4 p-4 pt-16">
+      <div className="fixed top-4 left-4 z-20">
+        <Link
+          href={`/aluno?codigo=${encodeURIComponent(codigoAtividade)}`}
+          className={cn(
+            buttonVariants({ variant: "ghost" }),
+            "bg-background/95 backdrop-blur"
+          )}
+        >
+          <ArrowLeftIcon data-icon="inline-start" />
+          Voltar
+        </Link>
+      </div>
+
       <Card className="w-full max-w-3xl">
         <CardHeader>
           <CardTitle>Continuar atividade</CardTitle>
@@ -75,14 +89,6 @@ export default async function Page({
           <ContinueActivityGrid codigo={codigoAtividade} alunos={ordenados} />
         </CardContent>
       </Card>
-
-      <Link
-        href={`/aluno?codigo=${encodeURIComponent(codigoAtividade)}`}
-        className={buttonVariants({ variant: "ghost" })}
-      >
-        <ArrowLeftIcon data-icon="inline-start" />
-        Voltar
-      </Link>
     </div>
   )
 }
