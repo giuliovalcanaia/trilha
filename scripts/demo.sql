@@ -133,12 +133,18 @@ begin
     returning id into v_estudante;
 
     insert into public.participacoes (
-      aplicacao_id, estudante_id, nome, iniciado_em, concluido_em
+      aplicacao_id,
+      estudante_id,
+      nome,
+      conexao_estudante_id,
+      iniciado_em,
+      concluido_em
     )
     values (
       v_aplicacao,
       v_estudante,
       v_aluno.nome,
+      v_estudante,
       now() - interval '50 minutes',
       case when v_aluno.concluidos = 4 then now() - interval '5 minutes' end
     )

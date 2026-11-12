@@ -240,8 +240,13 @@ begin
   values ('bbbbbbbb-0000-4000-8000-000000000001', 'Maria')
   returning id into v_estudante_id;
 
-  insert into public.participacoes (aplicacao_id, estudante_id, nome)
-  values (v_aplicacao_id, v_estudante_id, 'Maria')
+  insert into public.participacoes (
+    aplicacao_id,
+    estudante_id,
+    nome,
+    conexao_estudante_id
+  )
+  values (v_aplicacao_id, v_estudante_id, 'Maria', v_estudante_id)
   returning id into v_participacao_id;
 
   select id into v_primeiro_link

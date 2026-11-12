@@ -159,6 +159,7 @@ export type Database = {
           aplicacao_id: number
           bloqueado_ate: string | null
           concluido_em: string | null
+          conexao_estudante_id: number | null
           estudante_id: number
           expulso_em: string | null
           id: number
@@ -170,6 +171,7 @@ export type Database = {
           aplicacao_id: number
           bloqueado_ate?: string | null
           concluido_em?: string | null
+          conexao_estudante_id?: number | null
           estudante_id: number
           expulso_em?: string | null
           id?: number
@@ -181,6 +183,7 @@ export type Database = {
           aplicacao_id?: number
           bloqueado_ate?: string | null
           concluido_em?: string | null
+          conexao_estudante_id?: number | null
           estudante_id?: number
           expulso_em?: string | null
           id?: number
@@ -194,6 +197,13 @@ export type Database = {
             columns: ["aplicacao_id"]
             isOneToOne: false
             referencedRelation: "aplicacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participacoes_conexao_estudante_id_fkey"
+            columns: ["conexao_estudante_id"]
+            isOneToOne: false
+            referencedRelation: "estudantes"
             referencedColumns: ["id"]
           },
           {
@@ -463,6 +473,10 @@ export type Database = {
         }
         Returns: Json
       }
+      continue_activity: {
+        Args: { p_codigo: string; p_participacao_id: number }
+        Returns: Json
+      }
       duplicate_atividade: {
         Args: { p_atividade_id: number }
         Returns: number
@@ -487,12 +501,25 @@ export type Database = {
         Args: { p_codigo: string; p_nome: string }
         Returns: Json
       }
+      list_activity_students: {
+        Args: { p_codigo: string }
+        Returns: {
+          aluno_nome: string
+          em_uso: boolean
+          entrou_em: string
+          participacao_id: number
+        }[]
+      }
       move_link: {
         Args: { p_direcao: number; p_link_id: number }
         Returns: undefined
       }
       purge_trash: {
         Args: { p_trash_id: string }
+        Returns: undefined
+      }
+      release_participation: {
+        Args: { p_participacao_id: number }
         Returns: undefined
       }
       reorder_links: {
