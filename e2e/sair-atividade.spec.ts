@@ -51,10 +51,12 @@ test("sai da atividade e reassume o nome com o progresso salvo", async ({
 
   await page.waitForURL(`**/aluno/continuar?codigo=${CODIGO}`)
 
-  // O nome ficou livre e pode ser retomado na hora.
+  // O nome ficou livre e pode ser retomado na hora. O selo "Em uso" é
+  // conferido dentro do próprio cartão: outros alunos deixados conectados
+  // pelas specs anteriores da suíte não podem derrubar esta asserção.
   const cartao = page.getByRole("button", { name: `Continuar como ${NOME}` })
   await expect(cartao).toBeEnabled()
-  await expect(page.getByText("Em uso")).toHaveCount(0)
+  await expect(cartao.getByText("Em uso")).toHaveCount(0)
   await cartao.click()
 
   await page.waitForURL("**/atividade**")

@@ -49,7 +49,13 @@ export function StudentActivityHeader({
             {titulo}
             {nome && (
               <>
-                {" - "}
+                {/*
+                  NBSP depois do hífen: com um espaço comum, o navegador
+                  colapsa o espaço no fim da linha quando o nome está vazio e
+                  o cursor fica colado no "-"; ao digitar, o espaço reaparece
+                  e o texto "pula".
+                */}
+                {" -\u00A0"}
                 {nome}
               </>
             )}
