@@ -45,7 +45,7 @@ test("sai da atividade e reassume o nome com o progresso salvo", async ({
   await page.locator("input[data-inline-password]").first().waitFor()
 
   // O botão fica no cabeçalho fixo, ao lado do nome.
-  await page.getByRole("button", { name: "Sair" }).click()
+  await page.getByRole("button", { name: "Sair", exact: true }).click()
   await page.getByRole("alertdialog").waitFor()
   await page.getByRole("button", { name: "Sair", exact: true }).last().click()
 

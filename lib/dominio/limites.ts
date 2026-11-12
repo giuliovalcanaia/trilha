@@ -2,6 +2,8 @@
 export const TITULO_ATIVIDADE_MAX = 120
 export const SUBTITULO_ATIVIDADE_MAX = 200
 export const NOME_PASTA_MAX = 120
+/** Nome do aluno na lista da atividade (entrada e edição usam o mesmo limite). */
+export const NOME_ALUNO_MAX = 40
 /** O bcrypt trunca em 72 bytes; acima disso a senha efetiva seria outra. */
 export const SENHA_MIN = 4
 export const SENHA_MAX = 72

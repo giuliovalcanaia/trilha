@@ -8,6 +8,7 @@ import { falhaDeRpc } from "@/lib/actions/rpc-error"
 import { SESSAO_EXPIRADA } from "@/lib/actions/with-professor"
 import { getEstudante } from "@/lib/auth/estudante"
 import { mensagemDoErro } from "@/lib/dominio/erros"
+import { NOME_ALUNO_MAX } from "@/lib/dominio/limites"
 
 /**
  * Resposta de `complete_link` quando a senha é recusada.
@@ -119,4 +120,39 @@ export async function sairDaAtividade(
 
   revalidatePath("/atividade")
   redirect(`/aluno/continuar?codigo=${encodeURIComponent(codigo)}`)
+}
+
+/**
+ * Renomeia a participação conectada (o nome que aparece no título). Mantém a
+ * conexão e o progresso: muda só o rótulo do aluno na lista.
+ */
+export async function renomearAluno(
+  aplicacaoId: number,
+  nome: string
+): Promise<ActionResult> {
+  const aluno = await getEstudante()
+
+  if (!aluno) return fail(SESSAO_EXPIRADA, "sessao")
+
+  const limpo = nome.trim()
+
+  if (!limpo) {
+    return fail(mensagemDoErro("TRL04") ?? "Informe o seu nome.", "TRL04")
+  }
+
+  if (limpo.length > NOME_ALUNO_MAX) {
+    return fail(mensagemDoErro("TRL34") ?? "Nome muito longo.", "TRL34")
+  }
+
+  const { error } = await aluno.supabase.rpc("rename_my_participation", {
+    p_aplicacao_id: aplicacaoId,
+    p_nome: limpo,
+  })
+
+  if (error) {
+    return falhaDeRpc(error, "Não foi possível salvar o nome.")
+  }
+
+  revalidatePath("/atividade")
+  return { error: null }
 }

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { mensagemDoErro } from "@/lib/dominio/erros"
+import { NOME_ALUNO_MAX } from "@/lib/dominio/limites"
 import { avisarContinuar } from "@/lib/supabase/broadcast"
 import { createClient } from "@/lib/supabase/client"
 
@@ -74,6 +75,7 @@ export function StudentNameForm({ codigo }: { codigo: string }) {
           autoComplete="off"
           value={nome}
           onChange={(event) => setNome(event.target.value)}
+          maxLength={NOME_ALUNO_MAX}
           disabled={loading}
           className="min-h-11 sm:min-h-0"
         />

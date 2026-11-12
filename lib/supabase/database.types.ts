@@ -536,6 +536,10 @@ export type Database = {
         Args: { p_participacao_id: number }
         Returns: undefined
       }
+      rename_my_participation: {
+        Args: { p_aplicacao_id: number; p_nome: string }
+        Returns: undefined
+      }
       reorder_links: {
         Args: { p_atividade_id: number; p_link_ids: number[] }
         Returns: undefined
@@ -554,6 +558,10 @@ export type Database = {
       }
       set_atividade_ativa: {
         Args: { p_atividade_id: number; p_ativa: boolean }
+        Returns: undefined
+      }
+      set_student_name: {
+        Args: { p_nome: string; p_participacao_id: number }
         Returns: undefined
       }
       set_student_progress: {

@@ -38,6 +38,7 @@ export const ERROS = {
   TRL31: "Não foi possível gerar o código de entrada.",
   TRL32: "Muitas tentativas de senha. Aguarde um minuto e tente de novo.",
   TRL33: "Este nome já está conectado. Peça ao professor para liberar.",
+  TRL34: "O nome pode ter no máximo 40 caracteres.",
 } as const
 
 export type CodigoErro = keyof typeof ERROS

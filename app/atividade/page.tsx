@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 
+import { EditableStudentName } from "@/components/aluno/editable-student-name"
 import { LeaveActivityButton } from "@/components/aluno/leave-activity-button"
 import { StudentActivityHeader } from "@/components/aluno/student-activity-header"
 import { StudentActivityRealtime } from "@/components/aluno/student-activity-realtime"
@@ -157,7 +158,13 @@ export default async function Page({
     <div className="mx-auto flex max-w-4xl flex-col space-y-4">
       {tempoReal}
       <StudentActivityHeader
-        titulo={`${atividade.titulo} - ${participacao.nome}`}
+        titulo={atividade.titulo}
+        nome={
+          <EditableStudentName
+            aplicacaoId={aplicacao.id}
+            nome={participacao.nome}
+          />
+        }
         subtitulo={atividade.subtitulo}
         meta={
           aplicacao.data && <>Data da aula: {formatarData(aplicacao.data)}</>

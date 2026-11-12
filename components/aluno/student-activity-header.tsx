@@ -9,6 +9,8 @@ import {
 
 type StudentActivityHeaderProps = {
   titulo: string
+  /** Nome do aluno no título; na tela do aluno é editável. */
+  nome?: ReactNode
   subtitulo: string | null
   meta?: ReactNode
   concluidas: number
@@ -29,6 +31,7 @@ type StudentActivityHeaderProps = {
  */
 export function StudentActivityHeader({
   titulo,
+  nome,
   subtitulo,
   meta,
   concluidas,
@@ -44,7 +47,18 @@ export function StudentActivityHeader({
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
             {titulo}
+            {nome && (
+              <>
+                {" - "}
+                {nome}
+              </>
+            )}
           </h1>
+          {nome && (
+            <span id="dica-editar-nome" className="sr-only">
+              Clique no nome para editar.
+            </span>
+          )}
           {subtitulo && (
             <p className="text-sm text-muted-foreground sm:text-base">
               {subtitulo}

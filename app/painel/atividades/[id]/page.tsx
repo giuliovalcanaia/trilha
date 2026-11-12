@@ -14,6 +14,7 @@ import { AtividadeTabsList } from "@/components/painel/atividade-tabs-list"
 import { AtividadeTempoReal } from "@/components/painel/atividade-tempo-real"
 import { ConcluirEtapaForm } from "@/components/painel/concluir-etapa-form"
 import { ExpelStudentButton } from "@/components/painel/expel-student-button"
+import { RenameStudentButton } from "@/components/painel/rename-student-button"
 import { LinkAtividadeCopiavel } from "@/components/painel/link-atividade-copiavel"
 import { LinksDraftProvider } from "@/components/painel/links-draft"
 import { LinksEditorTextarea } from "@/components/painel/links-editor-textarea"
@@ -254,12 +255,20 @@ export default async function Page({
                                 <AlunoDisclosure
                                   nome={aluno.nome}
                                   acoes={
-                                    <ExpelStudentButton
-                                      atividadeId={atividade.id}
-                                      participacaoId={aluno.id}
-                                      nome={aluno.nome}
-                                      codigo={aplicacao.codigo}
-                                    />
+                                    <div className="flex items-center gap-1">
+                                      <RenameStudentButton
+                                        atividadeId={atividade.id}
+                                        participacaoId={aluno.id}
+                                        nome={aluno.nome}
+                                        codigo={aplicacao.codigo}
+                                      />
+                                      <ExpelStudentButton
+                                        atividadeId={atividade.id}
+                                        participacaoId={aluno.id}
+                                        nome={aluno.nome}
+                                        codigo={aplicacao.codigo}
+                                      />
+                                    </div>
                                   }
                                   acao={
                                     links.length === 0 ? null : etapaAtual &&
