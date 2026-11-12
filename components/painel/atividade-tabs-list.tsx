@@ -6,10 +6,11 @@ type AtividadeTabsListProps = {
 }
 
 /**
- * Abas compartilhadas: Configurações → Alunos.
+ * Abas compartilhadas: Alunos → Configurações.
  *
- * Na criação, Alunos fica desabilitada porque o código de entrada só existe
- * depois que a atividade é criada.
+ * Alunos vem primeiro porque é a aba mais usada no dia a dia. Na criação,
+ * ela fica desabilitada (o código de entrada só existe depois que a
+ * atividade é criada) e a aba ativa é Configurações.
  */
 export function AtividadeTabsList({
   modo,
@@ -19,7 +20,6 @@ export function AtividadeTabsList({
 
   return (
     <TabsList variant="line">
-      <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
       <TabsTrigger
         value="alunos"
         disabled={criando}
@@ -32,6 +32,7 @@ export function AtividadeTabsList({
       >
         Alunos{criando ? "" : ` (${alunosCount})`}
       </TabsTrigger>
+      <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
     </TabsList>
   )
 }

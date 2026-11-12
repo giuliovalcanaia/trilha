@@ -37,7 +37,7 @@ type LinksDraftProviderProps = {
 /** Rascunho da lista de links compartilhado pelo textarea e pelo card de links. */
 export function LinksDraftProvider({
   initialValue,
-  initialTab = "configuracoes",
+  initialTab = "alunos",
   children,
 }: LinksDraftProviderProps) {
   const [value, setValue] = useState(initialValue)

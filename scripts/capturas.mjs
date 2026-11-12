@@ -250,7 +250,9 @@ async function principal() {
   await esperarHidratacao(prof)
   const urlAtividade = prof.url().split("?")[0].replace(BASE, "")
 
-  // O editor tem três cards; uma viewport mais alta evita cortar o de senha.
+  // O editor abre em Alunos; a captura do editor é a aba Configurações, com
+  // os três cards (links, ordem e senha).
+  await prof.getByRole("tab", { name: "Configurações" }).click()
   await prof.setViewportSize({ width: 1440, height: 1180 })
   await capturar(prof, "atividade-editor.png")
   await prof.setViewportSize({ width: 1440, height: 900 })

@@ -91,6 +91,16 @@ test("professor cria, aluno conclui e professor encerra", async ({
   // 1. Professor cria a atividade com três links e senha de liberação.
   await irPara(page, "/painel/atividades/nova")
 
+  // A criação abre em Configurações, mesmo com Alunos vindo primeiro; a aba
+  // Alunos fica desabilitada até a atividade existir.
+  await expect(page.getByRole("tab").nth(0)).toHaveText(/^Alunos/)
+  await expect(page.getByRole("tab").nth(1)).toHaveText("Configurações")
+  await expect(page.getByRole("tab").nth(0)).toBeDisabled()
+  await expect(page.getByRole("tab").nth(1)).toHaveAttribute(
+    "aria-selected",
+    "true"
+  )
+
   // O título é um `contentEditable` com aria-label próprio.
   await page.locator("#titulo-atividade").fill(TITULO)
   await page
@@ -102,8 +112,15 @@ test("professor cria, aluno conclui e professor encerra", async ({
   await page.waitForURL(/\/painel\/atividades\/\d+$/)
   await expect(page.locator("#titulo-atividade")).toHaveText(TITULO)
 
-  // 2. O código de entrada aparece na aba Alunos.
-  await abrirAbaAlunos(page)
+  // 2. Depois de criar, a atividade abre na aba Alunos (sem clique): é a
+  // aba mais usada no dia a dia, e o código de entrada já aparece.
+  await expect(page.getByRole("tab").nth(0)).toHaveText(/^Alunos/)
+  await expect(page.getByRole("tab").nth(1)).toHaveText("Configurações")
+  await expect(page.getByRole("tab").nth(0)).toHaveAttribute(
+    "aria-selected",
+    "true"
+  )
+  await expect(page.getByText("Código de entrada")).toBeVisible()
   const codigo = (
     await page
       .getByRole("button", { name: "Copiar link da atividade" })

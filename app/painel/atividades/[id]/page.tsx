@@ -58,7 +58,7 @@ export default async function Page({
 }) {
   const [{ id }, { aba }] = await Promise.all([params, searchParams])
   const atividadeId = Number(id)
-  const abaInicial = aba === "alunos" ? aba : "configuracoes"
+  const abaInicial = aba === "configuracoes" ? "configuracoes" : "alunos"
 
   if (!Number.isInteger(atividadeId) || atividadeId <= 0) notFound()
 
@@ -298,11 +298,11 @@ export default async function Page({
                                               ? "Conectado"
                                               : "Sem conexão"}
                                           </Badge>
-                                          <span className="text-xs text-muted-foreground">
-                                            {conectado
-                                              ? "Uma sessão está com este nome."
-                                              : "Nenhuma sessão está com este nome."}
-                                          </span>
+                                          {!conectado && (
+                                            <span className="text-xs text-muted-foreground">
+                                              Nenhuma sessão está com este nome.
+                                            </span>
+                                          )}
                                         </div>
                                         <ReleaseConnectionButton
                                           atividadeId={atividade.id}

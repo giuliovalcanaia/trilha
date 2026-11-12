@@ -80,7 +80,7 @@ const VIEWS = ["lista", "grade"] as const
 
 /** URL do editor; o prefetch precisa bater com o que o `abrir` navega. */
 function urlDaAtividade(id: number) {
-  return `/painel/atividades/${id}?aba=configuracoes`
+  return `/painel/atividades/${id}`
 }
 
 type DialogState =
