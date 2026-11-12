@@ -108,16 +108,23 @@ test("nome conectado fica indisponível até o professor derrubar", async ({
     alunoB.getByRole("heading", { name: `Daily Routines - ${NOME}` })
   ).toBeVisible()
 
-  // 6. O aluno A perde a conexão na hora, sem reload: volta para a tela de
-  // nomes com o aviso de que o professor derrubou a conexão.
-  await alunoA.waitForURL(`**/aluno?codigo=${CODIGO}&desconectado=1`)
+  // 6. O aluno A perde a conexão na hora, sem reload: cai na tela de
+  // continuar, com o aviso, e pode escolher o nome de novo (ou usar Voltar
+  // para entrar com um nome novo).
+  await alunoA.waitForURL(`**/aluno/continuar?codigo=${CODIGO}&desconectado=1`)
   await expect(
     alunoA.getByText("Conexão encerrada", { exact: true })
   ).toBeVisible()
+  await expect(alunoA.getByRole("link", { name: "Voltar" })).toBeVisible()
+  // Maria está com o aluno B, então a grade aparece com o nome indisponível.
   await expect(
-    alunoA.getByRole("link", { name: "Continuar atividade" })
-  ).toBeVisible()
+    alunoA.getByRole("button", { name: `Continuar como ${NOME}` })
+  ).toBeDisabled()
 
+  // Fecha as abas antes dos contextos para o beacon de saída rodar e a Maria
+  // não ficar presa no banco local depois do teste.
+  await alunoA.close()
+  await alunoB.close()
   await contextoA.close()
   await contextoB.close()
 })

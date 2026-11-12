@@ -1,9 +1,10 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { ArrowLeftIcon } from "lucide-react"
+import { ArrowLeftIcon, UnplugIcon } from "lucide-react"
 
 import { ContinueActivityGrid } from "@/components/aluno/continue-activity-grid"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { buttonVariants } from "@/components/ui/button"
 import {
   Card,
@@ -26,9 +27,9 @@ export const metadata: Metadata = {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ codigo?: string }>
+  searchParams: Promise<{ codigo?: string; desconectado?: string }>
 }) {
-  const { codigo } = await searchParams
+  const { codigo, desconectado } = await searchParams
   const codigoAtividade = codigo?.trim().toUpperCase()
 
   if (!codigoAtividade) redirect("/")
@@ -76,6 +77,17 @@ export default async function Page({
           Voltar
         </Link>
       </div>
+
+      {desconectado === "1" && (
+        <Alert className="w-full max-w-3xl">
+          <UnplugIcon />
+          <AlertTitle>Conexão encerrada</AlertTitle>
+          <AlertDescription>
+            O professor liberou a sua conexão. Escolha o seu nome para continuar
+            de onde parou.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card className="w-full max-w-3xl">
         <CardHeader>

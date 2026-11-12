@@ -27,8 +27,10 @@ const INTERVALO_BATIMENTO = 30_000
  */
 export function StudentConnectionHeartbeat({
   aplicacaoId,
+  codigo,
 }: {
   aplicacaoId: number
+  codigo: string
 }) {
   const router = useRouter()
 
@@ -47,7 +49,9 @@ export function StudentConnectionHeartbeat({
 
       if (data === false) {
         cancelado = true
-        router.refresh()
+        router.push(
+          `/aluno/continuar?codigo=${encodeURIComponent(codigo)}&desconectado=1`
+        )
       }
     }
 
@@ -81,7 +85,7 @@ export function StudentConnectionHeartbeat({
       document.removeEventListener("visibilitychange", aoTrocarVisibilidade)
       window.removeEventListener("pagehide", agendarSaida)
     }
-  }, [aplicacaoId, router])
+  }, [aplicacaoId, codigo, router])
 
   return null
 }

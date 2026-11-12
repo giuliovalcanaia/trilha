@@ -55,7 +55,7 @@ export function StudentActivityRealtime({
 
       if (data === false) {
         router.push(
-          `/aluno?codigo=${encodeURIComponent(codigo)}&desconectado=1`
+          `/aluno/continuar?codigo=${encodeURIComponent(codigo)}&desconectado=1`
         )
       }
     }

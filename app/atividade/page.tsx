@@ -53,7 +53,10 @@ export default async function Page({
         aplicacaoId={aplicacao.id}
         codigo={codigoEntrada}
       />
-      <StudentConnectionHeartbeat aplicacaoId={aplicacao.id} />
+      <StudentConnectionHeartbeat
+        aplicacaoId={aplicacao.id}
+        codigo={codigoEntrada}
+      />
     </>
   )
 
