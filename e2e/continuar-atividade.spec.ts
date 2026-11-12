@@ -108,9 +108,12 @@ test("nome conectado fica indisponível até o professor derrubar", async ({
     alunoB.getByRole("heading", { name: `Daily Routines - ${NOME}` })
   ).toBeVisible()
 
-  // 6. O aluno A perdeu a conexão e volta para a tela de nomes.
-  await alunoA.reload()
-  await alunoA.waitForURL(`**/aluno?codigo=${CODIGO}`)
+  // 6. O aluno A perde a conexão na hora, sem reload: volta para a tela de
+  // nomes com o aviso de que o professor derrubou a conexão.
+  await alunoA.waitForURL(`**/aluno?codigo=${CODIGO}&desconectado=1`)
+  await expect(
+    alunoA.getByText("Conexão encerrada", { exact: true })
+  ).toBeVisible()
   await expect(
     alunoA.getByRole("link", { name: "Continuar atividade" })
   ).toBeVisible()

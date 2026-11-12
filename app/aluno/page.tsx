@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { UserXIcon, UsersIcon } from "lucide-react"
+import { UnplugIcon, UserXIcon, UsersIcon } from "lucide-react"
 
 import { StudentNameForm } from "@/components/aluno/student-name-form"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -21,9 +21,13 @@ export const metadata: Metadata = {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ codigo?: string; expulso?: string }>
+  searchParams: Promise<{
+    codigo?: string
+    expulso?: string
+    desconectado?: string
+  }>
 }) {
-  const { codigo, expulso } = await searchParams
+  const { codigo, expulso, desconectado } = await searchParams
   const codigoAtividade = codigo?.trim().toUpperCase()
 
   if (!codigoAtividade) redirect("/")
@@ -43,6 +47,7 @@ export default async function Page({
 
   const expulsoDaAtividade =
     expulso === "1" || Boolean(participacao?.participacao.expulso_em)
+  const desconectadoDaAtividade = !expulsoDaAtividade && desconectado === "1"
 
   const supabase = await createClient()
   const alunos = expulsoDaAtividade
@@ -59,6 +64,16 @@ export default async function Page({
           <AlertDescription>
             O professor expulsou você desta atividade. Digite seu nome para
             entrar novamente.
+          </AlertDescription>
+        </Alert>
+      )}
+      {desconectadoDaAtividade && (
+        <Alert className="w-full max-w-sm">
+          <UnplugIcon />
+          <AlertTitle>Conexão encerrada</AlertTitle>
+          <AlertDescription>
+            O professor liberou a sua conexão. Escolha o seu nome para continuar
+            de onde parou.
           </AlertDescription>
         </Alert>
       )}

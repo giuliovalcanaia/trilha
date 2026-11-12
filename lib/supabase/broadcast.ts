@@ -9,25 +9,26 @@ export function canalContinuar(codigo: string) {
   return `continuar-${codigo.trim().toUpperCase()}`
 }
 
+/** Canal público da tela de um aluno (Realtime + avisos da conexão). */
+export function canalAluno(participacaoId: number) {
+  return `aluno-participacao-${participacaoId}`
+}
+
 /**
- * Avisa as outras telas de "Continuar atividade" que a lista mudou.
+ * Envia um broadcast sem payload e fecha o canal.
  *
- * É um canal de broadcast público e sem payload: quem escuta apenas refaz a
- * leitura de `list_activity_students`. Não usamos `postgres_changes` aqui
- * porque a página é aberta antes do login anônimo e a RLS de `participacoes`
- * não libera a tabela para `anon`.
- *
- * Devolve uma Promise que resolve quando o aviso foi enviado (ou depois de
- * 1,5s, se o canal demorar). Quem vai navegar logo em seguida — o aluno que
- * acabou de assumir o nome — deve esperar por ela; os demais podem ignorar,
- * porque a tela relê a lista a cada 10s como reserva.
+ * Devolve uma Promise que resolve quando o aviso saiu (ou depois de 1,5s, se o
+ * canal demorar). Quem vai navegar logo em seguida — o aluno que acabou de
+ * assumir o nome — deve esperar por ela; os demais podem ignorar, porque as
+ * telas também releem o estado periodicamente.
  */
-export function avisarContinuar(
+function avisar(
   supabase: SupabaseClient<Database>,
-  codigo: string
+  topico: string,
+  evento: string
 ) {
   return new Promise<void>((resolve) => {
-    const canal = supabase.channel(canalContinuar(codigo))
+    const canal = supabase.channel(topico)
     let encerrado = false
 
     function encerrar() {
@@ -43,11 +44,7 @@ export function avisarContinuar(
     canal.subscribe((status) => {
       if (status === "SUBSCRIBED") {
         void canal
-          .send({
-            type: "broadcast",
-            event: "atualizar",
-            payload: {},
-          })
+          .send({ type: "broadcast", event: evento, payload: {} })
           .then(encerrar, encerrar)
         return
       }
@@ -61,4 +58,35 @@ export function avisarContinuar(
       }
     })
   })
+}
+
+/**
+ * Avisa as outras telas de "Continuar atividade" que a lista mudou.
+ *
+ * É um canal de broadcast público e sem payload: quem escuta apenas refaz a
+ * leitura de `list_activity_students`. Não usamos `postgres_changes` aqui
+ * porque a página é aberta antes do login anônimo e a RLS de `participacoes`
+ * não libera a tabela para `anon`.
+ */
+export function avisarContinuar(
+  supabase: SupabaseClient<Database>,
+  codigo: string
+) {
+  return avisar(supabase, canalContinuar(codigo), "atualizar")
+}
+
+/**
+ * Avisa a tela do aluno que o professor derrubou a conexão, para ela sair na
+ * hora — a RLS esconde a linha de `participacoes` assim que a conexão é
+ * limpa, então o `postgres_changes` da própria tela não entrega o UPDATE.
+ *
+ * O canal é público, então qualquer pessoa poderia enviar este evento; por
+ * isso ele não carrega confiança: a tela confere com `touch_participation`
+ * antes de sair. Quem decide a conexão continua sendo o banco.
+ */
+export function avisarConexaoEncerrada(
+  supabase: SupabaseClient<Database>,
+  participacaoId: number
+) {
+  return avisar(supabase, canalAluno(participacaoId), "conexao-encerrada")
 }

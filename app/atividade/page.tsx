@@ -3,11 +3,12 @@ import { redirect } from "next/navigation"
 
 import { StudentActivityHeader } from "@/components/aluno/student-activity-header"
 import { StudentActivityRealtime } from "@/components/aluno/student-activity-realtime"
+import { StudentConnectionHeartbeat } from "@/components/aluno/student-connection-heartbeat"
 import { StudentLinkList } from "@/components/aluno/student-link-list"
 import { Card, CardDescription, CardHeader } from "@/components/ui/card"
 import { getEstudante, getParticipacaoDoAluno } from "@/lib/auth/estudante"
 import { getAtividadePublica } from "@/lib/data/atividade"
-import { getLinksComProgresso } from "@/lib/data/aluno"
+import { getAplicacaoStatus, getLinksComProgresso } from "@/lib/data/aluno"
 import { formatarData } from "@/lib/format"
 import { ordenarLinksDoAluno } from "@/lib/dominio/ordem-links"
 import { statusProgresso } from "@/lib/dominio/status"
@@ -46,18 +47,32 @@ export default async function Page({
   }
 
   const tempoReal = (
-    <StudentActivityRealtime
-      participacaoId={participacao.id}
-      aplicacaoId={aplicacao.id}
-    />
+    <>
+      <StudentActivityRealtime
+        participacaoId={participacao.id}
+        aplicacaoId={aplicacao.id}
+        codigo={codigoEntrada}
+      />
+      <StudentConnectionHeartbeat aplicacaoId={aplicacao.id} />
+    </>
   )
 
   const atividade = await getAtividadePublica(supabase, aplicacao.atividade_id)
 
+  // A RLS esconde a atividade assim que ela volta a rascunho, e a entrada
+  // passa a "encerrada" no mesmo commit. Como são duas leituras separadas,
+  // uma atualização do Realtime pode cair no meio delas e ver a atividade
+  // escondida com a entrada ainda aberta. Relê o status antes de dizer que a
+  // atividade sumiu.
+  const aplicacaoEncerrada =
+    aplicacao.status === "encerrada" ||
+    (atividade === null &&
+      (await getAplicacaoStatus(supabase, aplicacao.id)) === "encerrada")
+
   // A entrada encerrada continua visível para o aluno (a RLS não filtra por
   // status), então esta checagem vem antes da atividade: depois de encerrar,
   // a atividade deixa de ser visível pela policy de SELECT.
-  if (aplicacao.status === "encerrada") {
+  if (aplicacaoEncerrada) {
     return (
       <div className="mx-auto flex max-w-4xl flex-col p-4">
         {tempoReal}

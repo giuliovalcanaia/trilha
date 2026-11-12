@@ -159,7 +159,9 @@ export type Database = {
           aplicacao_id: number
           bloqueado_ate: string | null
           concluido_em: string | null
+          conexao_em: string | null
           conexao_estudante_id: number | null
+          desconexao_agendada_em: string | null
           estudante_id: number
           expulso_em: string | null
           id: number
@@ -171,7 +173,9 @@ export type Database = {
           aplicacao_id: number
           bloqueado_ate?: string | null
           concluido_em?: string | null
+          conexao_em?: string | null
           conexao_estudante_id?: number | null
+          desconexao_agendada_em?: string | null
           estudante_id: number
           expulso_em?: string | null
           id?: number
@@ -183,7 +187,9 @@ export type Database = {
           aplicacao_id?: number
           bloqueado_ate?: string | null
           concluido_em?: string | null
+          conexao_em?: string | null
           conexao_estudante_id?: number | null
+          desconexao_agendada_em?: string | null
           estudante_id?: number
           expulso_em?: string | null
           id?: number
@@ -464,6 +470,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      agendar_desconexao: {
+        Args: { p_aplicacao_id: number }
+        Returns: undefined
+      }
       complete_link: {
         Args: {
           p_aplicacao_id: number
@@ -566,6 +576,10 @@ export type Database = {
       trash_pasta: {
         Args: { p_pasta_id: number }
         Returns: string
+      }
+      touch_participation: {
+        Args: { p_aplicacao_id: number }
+        Returns: boolean
       }
       unshare_folder: {
         Args: { p_pasta_id: number; p_professor_id: number }

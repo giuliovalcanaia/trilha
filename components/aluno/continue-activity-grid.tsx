@@ -21,10 +21,12 @@ const INTERVALO_ATUALIZACAO = 10_000
 /**
  * Grade de nomes da aula anterior.
  *
- * Um nome conectado fica esmaecido e desabilitado: quem libera a conexão é o
- * professor, no painel, com "Derrubar". A lista se atualiza por um canal
- * público de broadcast (claim/derrubar/entrada/expulsão avisam) e, como
- * reserva, relê os nomes a cada 10s enquanto a aba está visível.
+ * Um nome conectado fica esmaecido e desabilitado. O professor libera na hora
+ * com "Derrubar", no painel; sem batimento da tela do aluno por 3 minutos a
+ * conexão expira sozinha (aba fechada, celular desligado) e o nome volta a
+ * ficar disponível. A lista se atualiza por um canal público de broadcast
+ * (claim/derrubar/entrada/expulsão avisam) e, como reserva, relê os nomes a
+ * cada 10s enquanto a aba está visível.
  */
 export function ContinueActivityGrid({
   codigo,

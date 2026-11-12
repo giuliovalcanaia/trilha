@@ -137,6 +137,7 @@ begin
       estudante_id,
       nome,
       conexao_estudante_id,
+      conexao_em,
       iniciado_em,
       concluido_em
     )
@@ -145,6 +146,7 @@ begin
       v_estudante,
       v_aluno.nome,
       v_estudante,
+      now(),
       now() - interval '50 minutes',
       case when v_aluno.concluidos = 4 then now() - interval '5 minutes' end
     )

@@ -5,7 +5,10 @@ import { UnplugIcon } from "lucide-react"
 import { releaseStudentConnection } from "@/app/painel/actions/aluno"
 import { ConfirmAction } from "@/components/painel/confirm-action"
 import { Button } from "@/components/ui/button"
-import { avisarContinuar } from "@/lib/supabase/broadcast"
+import {
+  avisarContinuar,
+  avisarConexaoEncerrada,
+} from "@/lib/supabase/broadcast"
 import { createClient } from "@/lib/supabase/client"
 
 /**
@@ -40,7 +43,12 @@ export function ReleaseConnectionButton({
       confirmLabel="Derrubar"
       confirmVariant="default"
       onSuccess={() => {
-        void avisarContinuar(createClient(), codigo)
+        // A tela do aluno perde a linha pela RLS assim que a conexão é
+        // limpa, então o postgres_changes dela não chega: o aviso direto
+        // derruba a conexão mesmo com a atividade aberta.
+        const supabase = createClient()
+        void avisarConexaoEncerrada(supabase, participacaoId)
+        void avisarContinuar(supabase, codigo)
       }}
       triggerLabel={`Derrubar a conexão de ${nome}`}
       trigger={

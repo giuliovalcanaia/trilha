@@ -6,7 +6,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path to public, extensions;
 
-select plan(21);
+select plan(30);
 
 insert into auth.users (id, email, is_anonymous) values
   ('00000000-0000-0000-0000-0000000000d1', 'prof-cont@trilha.test', false),
@@ -284,6 +284,138 @@ select is(
   'o aluno original pode reassumir o próprio nome depois do derrubar'
 );
 
+-- Conexão abandonada (aba fechada): o batimento velho libera o nome sem o
+-- professor precisar clicar em Derrubar.
+reset role;
+update public.participacoes
+set conexao_em = now() - interval '10 minutes'
+where id = :participacao_ana;
+
+select is(
+  (
+    select em_uso
+    from public.list_activity_students('CONT01')
+    where aluno_nome = 'Ana'
+  ),
+  false,
+  'conexão sem batimento aparece livre na lista'
+);
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-0000000000e2","role":"authenticated"}',
+  true
+);
+
+select public.continue_activity('CONT01', :participacao_ana);
+
+select is(
+  (
+    select conexao_estudante_id
+    from public.participacoes
+    where id = :participacao_ana
+  ),
+  (
+    select id from public.estudantes
+    where user_id = '00000000-0000-0000-0000-0000000000e2'
+  ),
+  'a conexão expirada pode ser assumida por outro aluno'
+);
+
+select ok(
+  (
+    select conexao_em > now() - interval '1 minute'
+    from public.participacoes
+    where id = :participacao_ana
+  ),
+  'assumir o nome renova o batimento'
+);
+
+-- O batimento da tela do aluno renova a conexão sem passar pelo professor.
+reset role;
+update public.participacoes
+set conexao_em = now() - interval '10 minutes'
+where id = :participacao_ana;
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-0000000000e2","role":"authenticated"}',
+  true
+);
+
+select public.touch_participation(:aplicacao_id);
+reset role;
+
+select ok(
+  (
+    select conexao_em > now() - interval '1 minute'
+    from public.participacoes
+    where id = :participacao_ana
+  ),
+  'touch_participation renova o batimento'
+);
+
+-- Fechar a aba (pagehide) agenda a saída; o nome libera depois da carência.
+reset role;
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-0000000000e2","role":"authenticated"}',
+  true
+);
+
+select public.agendar_desconexao(:aplicacao_id);
+reset role;
+
+select ok(
+  (
+    select desconexao_agendada_em > now()
+    from public.participacoes
+    where id = :participacao_ana
+  ),
+  'agendar_desconexao marca a saída com carência'
+);
+
+update public.participacoes
+set desconexao_agendada_em = now() - interval '1 second'
+where id = :participacao_ana;
+
+select is(
+  (
+    select em_uso
+    from public.list_activity_students('CONT01')
+    where aluno_nome = 'Ana'
+  ),
+  false,
+  'o nome fica livre depois da saída agendada'
+);
+
+-- Voltar para a aba (ou recarregar) cancela a saída agendada.
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-0000000000e2","role":"authenticated"}',
+  true
+);
+
+select ok(
+  public.touch_participation(:aplicacao_id),
+  'touch_participation confirma que a conexão ainda é desta sessão'
+);
+reset role;
+
+select is(
+  (
+    select em_uso
+    from public.list_activity_students('CONT01')
+    where aluno_nome = 'Ana'
+  ),
+  true,
+  'batimento cancela a saída agendada'
+);
+
 -- Código de outra atividade não pode ser usado para assumir a participação.
 select throws_ok(
   format(
@@ -376,6 +508,12 @@ select throws_ok(
   'TRL27',
   'participation_not_found',
   'continue_activity recusa participação expulsa'
+);
+
+select is(
+  public.touch_participation(:aplicacao_id),
+  false,
+  'batimento de uma participação expulsa responde false'
 );
 
 -- Professor de outra atividade não derruba a conexão.

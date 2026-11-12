@@ -27,6 +27,19 @@ export async function getAlunosParaContinuar(
   return data ?? []
 }
 
+/** Status atual da entrada, para desempatar uma corrida com o encerramento. */
+export async function getAplicacaoStatus(supabase: SupabaseClient, id: number) {
+  const { data, error } = await supabase
+    .from("aplicacoes")
+    .select("status")
+    .eq("id", id)
+    .maybeSingle()
+
+  if (error) throw new Error("aplicacao_status_lookup_failed")
+
+  return data?.status ?? null
+}
+
 /** Links e progresso do aluno na atividade, na ordem canônica dos links. */
 export async function getLinksComProgresso(
   supabase: SupabaseClient,

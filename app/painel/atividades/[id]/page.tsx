@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/card"
 import { TabsContent } from "@/components/ui/tabs"
 import { getAtividadeEditor } from "@/lib/data/atividade"
+import { conexaoAtiva } from "@/lib/dominio/conexao"
 import { ordenarLinksDoAluno } from "@/lib/dominio/ordem-links"
 import { ROTULOS_ATIVIDADE } from "@/lib/dominio/status"
 import { formatarData } from "@/lib/format"
@@ -226,6 +227,7 @@ export default async function Page({
                             const ordemSorteada = progressoDoAluno.some(
                               (row) => row.ordem_embaralhada !== null
                             )
+                            const conectado = conexaoAtiva(aluno)
 
                             // A etapa atual é a primeira não concluída na
                             // sequência do aluno — a mesma que a tela dele
@@ -287,17 +289,17 @@ export default async function Page({
                                         <div className="flex items-center gap-2">
                                           <Badge
                                             variant={
-                                              aluno.conexao_estudante_id
+                                              conectado
                                                 ? "default"
                                                 : "secondary"
                                             }
                                           >
-                                            {aluno.conexao_estudante_id
+                                            {conectado
                                               ? "Conectado"
                                               : "Sem conexão"}
                                           </Badge>
                                           <span className="text-xs text-muted-foreground">
-                                            {aluno.conexao_estudante_id
+                                            {conectado
                                               ? "Uma sessão está com este nome."
                                               : "Nenhuma sessão está com este nome."}
                                           </span>
@@ -307,9 +309,7 @@ export default async function Page({
                                           participacaoId={aluno.id}
                                           nome={aluno.nome}
                                           codigo={aplicacao.codigo}
-                                          conectado={
-                                            aluno.conexao_estudante_id !== null
-                                          }
+                                          conectado={conectado}
                                         />
                                       </div>
                                       {ordemSorteada && (

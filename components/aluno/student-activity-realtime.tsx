@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 
+import { canalAluno } from "@/lib/supabase/broadcast"
 import { createClient } from "@/lib/supabase/client"
 import { assinarCanalRealtime } from "@/lib/supabase/realtime"
 
@@ -16,13 +17,19 @@ import { assinarCanalRealtime } from "@/lib/supabase/realtime"
  * caído enquanto o aluno estava no link. Assina apenas INSERT/UPDATE: DELETE
  * exigiria `replica identity full` e as policies de RLS não são aplicadas a
  * eventos de DELETE.
+ *
+ * O `Derrubar` do professor limpa a conexão e a linha some da RLS, então o
+ * UPDATE de `participacoes` não chega. Por isso o painel também manda um
+ * broadcast em `canalAluno`; a tela confere no banco e sai na hora.
  */
 export function StudentActivityRealtime({
   participacaoId,
   aplicacaoId,
+  codigo,
 }: {
   participacaoId: number
   aplicacaoId: number
+  codigo: string
 }) {
   const router = useRouter()
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -39,13 +46,30 @@ export function StudentActivityRealtime({
       if (document.visibilityState === "visible") agendarAtualizacao()
     }
 
+    // O aviso de conexão encerrada é público, então não dá para confiar nele:
+    // o batimento confirma no banco se a participação ainda é desta sessão.
+    async function conferirConexao() {
+      const { data } = await supabase.rpc("touch_participation", {
+        p_aplicacao_id: aplicacaoId,
+      })
+
+      if (data === false) {
+        router.push(
+          `/aluno?codigo=${encodeURIComponent(codigo)}&desconectado=1`
+        )
+      }
+    }
+
     document.addEventListener("visibilitychange", atualizarSeVisivel)
 
     const pararCanal = assinarCanalRealtime(
       supabase,
-      `aluno-participacao-${participacaoId}`,
+      canalAluno(participacaoId),
       (canal) =>
         canal
+          .on("broadcast", { event: "conexao-encerrada" }, () => {
+            void conferirConexao()
+          })
           .on(
             "postgres_changes",
             {
@@ -93,7 +117,7 @@ export function StudentActivityRealtime({
       document.removeEventListener("visibilitychange", atualizarSeVisivel)
       pararCanal()
     }
-  }, [participacaoId, aplicacaoId, router])
+  }, [participacaoId, aplicacaoId, codigo, router])
 
   return null
 }
