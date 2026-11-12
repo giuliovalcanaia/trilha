@@ -286,24 +286,15 @@ export default async function Page({
                                   detalhe={
                                     <>
                                       <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed p-3">
-                                        <div className="flex items-center gap-2">
-                                          <Badge
-                                            variant={
-                                              conectado
-                                                ? "default"
-                                                : "secondary"
-                                            }
-                                          >
-                                            {conectado
-                                              ? "Conectado"
-                                              : "Sem conexão"}
-                                          </Badge>
-                                          {!conectado && (
-                                            <span className="text-xs text-muted-foreground">
-                                              Nenhuma sessão está com este nome.
-                                            </span>
-                                          )}
-                                        </div>
+                                        <Badge
+                                          variant={
+                                            conectado ? "default" : "secondary"
+                                          }
+                                        >
+                                          {conectado
+                                            ? "Conectado"
+                                            : "Sem conexão"}
+                                        </Badge>
                                         <ReleaseConnectionButton
                                           atividadeId={atividade.id}
                                           participacaoId={aluno.id}
